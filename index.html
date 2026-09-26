@@ -1388,27 +1388,28 @@ function renderIssuePreview(){
         docCell("finish", fmtDateShort(a.plannedFinish), r.depth);
     }
 
-    bodyRows += '<div style="display:flex; align-items:center; height:22px; border-bottom:1px solid #E3E7E1; background:'+rowBg+';">'+
+    bodyRows += '<div style="display:flex; align-items:center; height:30px; border-bottom:1px solid #E3E7E1; background:'+rowBg+';">'+
       '<div style="display:flex; flex-shrink:0;">'+dataCells+'</div>'+
       '<div style="position:relative; display:flex;">';
     dayCols.forEach(dt=>{
       const we=dt.getDay()===0||dt.getDay()===6, bh=isBankHoliday(dt);
-      bodyRows += '<div style="width:'+dw+'px; height:22px; flex-shrink:0; border-right:1px solid #EEF0ED; background:'+(bh?"#F6E8D2":we?"#EEF0ED":"transparent")+';"></div>';
+      bodyRows += '<div style="width:'+dw+'px; height:30px; flex-shrink:0; border-right:1px solid #EEF0ED; background:'+(bh?"#F6E8D2":we?"#EEF0ED":"transparent")+';"></div>';
     });
     if(r.type==="wp"){
       const roll = wpRollup(r.item.id);
       if(roll){
         const off=Math.round((toDate(roll.start)-range.start)/DAY_MS);
         const span=Math.max(1, Math.round((toDate(roll.finish)-toDate(roll.start))/DAY_MS)+1);
-        bodyRows += '<div style="position:absolute; left:'+(off*dw+1)+'px; top:8px; width:'+(span*dw-2)+'px; height:6px; background:#1A1A1A; border-radius:3px;"></div>';
+        bodyRows += '<div style="position:absolute; left:'+(off*dw+1)+'px; top:12px; width:'+(span*dw-2)+'px; height:6px; background:#1A1A1A; border-radius:3px;"></div>';
       }
     } else {
       const a=r.item;
       const off=Math.round((toDate(a.plannedStart)-range.start)/DAY_MS);
       const span=Math.max(1, Math.round((toDate(a.plannedFinish)-toDate(a.plannedStart))/DAY_MS)+1);
       const visual = barVisualPrint(a);
-      const style = "position:absolute; left:"+(off*dw+1)+"px; top:3px; width:"+(span*dw-2)+"px; height:16px; border-radius:3px; background:"+(visual.bg||"#FFFFFF")+"; opacity:"+visual.opacity+";"+(visual.dashed?" border:1.5px dashed #CBD3CD;":"");
-      bodyRows += '<div style="'+style+'"></div>';
+      const style = "position:absolute; left:"+(off*dw+1)+"px; top:12px; width:"+(span*dw-2)+"px; height:16px; border-radius:3px; background:"+(visual.bg||"#FFFFFF")+"; opacity:"+visual.opacity+";"+(visual.dashed?" border:1.5px dashed #CBD3CD;":"");
+      const dateLbl = '<div style="position:absolute; left:'+(off*dw+1)+'px; top:1px; width:'+Math.max(span*dw,80)+'px; font-size:6.8px; font-weight:700; color:#5B665E; white-space:nowrap;">'+fmtDateShort(a.plannedStart)+' – '+fmtDateShort(a.plannedFinish)+'</div>';
+      bodyRows += dateLbl+'<div style="'+style+'"></div>';
     }
     bodyRows += '</div></div>';
   });
