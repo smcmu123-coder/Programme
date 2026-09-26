@@ -1360,7 +1360,7 @@ function renderIssuePreview(){
   const monthRow = '<div style="display:flex; height:22px; border-bottom:1px solid #CBD3CD;">'+monthGroups.map(g=>'<div style="width:'+(g.count*dw)+'px; flex-shrink:0; font-size:9px; font-weight:800; color:#5B665E; border-right:1px solid #CBD3CD; padding:2px 4px; text-transform:uppercase;">'+g.label+'</div>').join('')+'</div>';
   const dayRow = '<div style="display:flex; height:22px;">'+dayCols.map((dt,i)=>{
     const we=dt.getDay()===0||dt.getDay()===6, bh=isBankHoliday(dt);
-    const tick = (i%7===0) ? dt.getDate() : '';
+    const tick = dt.getDate();
     return '<div style="width:'+dw+'px; flex-shrink:0; font-size:8px; color:#8B968E; text-align:center; border-right:1px solid #E3E7E1; background:'+(bh?"#F6E8D2":we?"#EEF0ED":"transparent")+';">'+tick+'</div>';
   }).join('')+'</div>';
 
