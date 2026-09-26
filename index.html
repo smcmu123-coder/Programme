@@ -240,7 +240,7 @@
 
   @media print{
     @page{ size: A3 landscape; margin: 10mm; }
-    html, body{ background:#fff !important; }
+    html, body{ background:#fff !important; margin:0 !important; }
     .topbar, #view-issue .programme-toolbar, .toast, .modal-backdrop{ display:none !important; }
     main{ display:block !important; }
     .view{ display:none !important; }
@@ -1364,6 +1364,8 @@ const DOC_COLS = [
 ];
 const BAND_COLORS = ["#DCE8F5","#F3E1E8"];
 const DOC_PAGE_CONTENT_W = 1480; /* fits printable width of A3 landscape (420mm - 20mm margins) */
+const DOC_PAGE_CONTENT_H = 1000; /* fits printable height of A3 landscape (297mm - 20mm margins) */
+const DOC_ROW_H = 22;
 
 function renderIssuePreview(viewRev){
   const isHistorical = !!(viewRev && viewRev.snapshot);
@@ -1480,6 +1482,8 @@ function renderIssuePreview(viewRev){
     '</div>'+
     '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+String(nextNum).padStart(2,"0")+'</span><span>Issued '+revDate+' · Page 1 of 1</span></div>';
 
+  padDocToPageBottom(dayCols, dw);
+
   const confirmBtn = document.getElementById("confirmIssueBtn");
   const chip = document.getElementById("issueStatusChip");
   if(isHistorical){
@@ -1506,6 +1510,37 @@ function docCell(key, value, depth, isName){
 }
 function docFact(label,value){ return '<div class="doc-fact"><div class="doc-fact-label">'+esc(label)+'</div><div class="doc-fact-value">'+esc(value)+'</div></div>'; }
 function legendItem(color,label){ return '<span><i style="background:'+color+';"></i>'+esc(label)+'</span>'; }
+
+/* Keeps the title-block/footer pinned to the bottom of the sheet: measures how much
+   of the printable A3 page the rendered document actually uses, then pads the Gantt
+   table with blank rows so the information table always lands flush with the bottom
+   of the page (as long as the real content fits on a single page). */
+function padDocToPageBottom(dayCols, dw){
+  const docPageEl = document.getElementById("docPage");
+  const wrap = docPageEl && docPageEl.querySelector(".doc-gantt-wrap");
+  const footerEl = docPageEl && docPageEl.querySelector(".doc-footer");
+  if(!docPageEl || !wrap || !footerEl) return;
+  // Measure from the natural bottom of the printed content (the footer), not the box's
+  // rendered height — on screen the page box is stretched to fill the viewport, which
+  // would otherwise make it look like the page is "full" when it's really mostly blank.
+  const pageTop = docPageEl.getBoundingClientRect().top;
+  const padTop = parseFloat(getComputedStyle(docPageEl).paddingTop) || 0;
+  const contentHeight = (footerEl.getBoundingClientRect().bottom - pageTop) - padTop; // height the doc will actually print at (print strips this padding)
+  const gap = DOC_PAGE_CONTENT_H - contentHeight;
+  if(gap <= DOC_ROW_H) return; // already fills the page (or overflows onto further pages) — leave pagination to the browser
+  const extraRows = Math.floor(gap / DOC_ROW_H);
+  let fillerHtml = '';
+  for(let i=0;i<extraRows;i++){
+    fillerHtml += '<div style="display:flex; align-items:center; height:'+DOC_ROW_H+'px; border-bottom:1px solid #E3E7E1; background:#FFFFFF;">'+
+      '<div style="display:flex; flex-shrink:0;">'+DOC_COLS.map(c=>'<div style="width:'+c.w+'px; flex-shrink:0; height:100%; border-right:1px solid #CBD3CD;"></div>').join('')+'</div>'+
+      '<div style="position:relative; display:flex;">'+dayCols.map(dt=>{
+        const we=dt.getDay()===0||dt.getDay()===6, bh=isBankHoliday(dt);
+        return '<div style="width:'+dw+'px; height:'+DOC_ROW_H+'px; flex-shrink:0; border-right:1px solid #EEF0ED; background:'+(bh?"#F6E8D2":we?"#EEF0ED":"transparent")+';"></div>';
+      }).join('')+'</div>'+
+    '</div>';
+  }
+  wrap.insertAdjacentHTML("beforeend", fillerHtml);
+}
 
 /* ============================================================
    SETTINGS
