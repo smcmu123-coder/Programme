@@ -90,6 +90,12 @@
   .row-actions{display:flex; gap:3px; opacity:0; flex-shrink:0; padding-right:6px;}
   .row:hover .row-actions{opacity:1;}
   .icon-btn{width:22px; height:22px; border:none; background:transparent; border-radius:5px; color:var(--text-muted); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .icon-btn:disabled{opacity:.25; cursor:default;}
+  .pred-list{max-height:140px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:4px 8px; margin-top:4px;}
+  .pred-pick{display:flex; align-items:center; gap:6px; font-size:13px; padding:5px 2px; border-bottom:1px solid var(--border-faint,var(--border)); }
+  .pred-pick:last-child{border-bottom:none;}
+  .pred-wp{margin-left:auto; font-size:11px; color:var(--text-muted);}
+  .link-badge{display:inline-flex; vertical-align:middle; margin-left:5px; color:var(--text-muted);}
   .icon-btn:hover{background:var(--grey-green); color:var(--text);}
   .indent-0{padding-left:0;} .indent-1{padding-left:18px;} .indent-2{padding-left:36px;}
   .gantt-header{position:sticky; top:0; z-index:5; background:var(--surface-2); border-bottom:1px solid var(--border);}
@@ -465,7 +471,7 @@ function loadState(){
 function normalizeState(){
   if(!state.project.jobNo) state.project.jobNo = "";
   if(state.project.drawnBy===undefined) state.project.drawnBy = "";
-  state.activities.forEach(a=>{ if(a.color===undefined) a.color = null; });
+  state.activities.forEach(a=>{ if(a.color===undefined) a.color = null; if(!a.predecessorIds) a.predecessorIds = []; });
 }
 function saveState(){ try{ localStorage.setItem("vantry_programme_v5", JSON.stringify(state)); }catch(e){} }
 loadState();
@@ -475,6 +481,62 @@ loadState();
    ============================================================ */
 function activitiesInWp(wpId){ return state.activities.filter(a=>a.workPackageId===wpId).sort((a,b)=>a.order-b.order); }
 function childWps(parentId){ return state.workPackages.filter(w=>w.parentId===parentId).sort((a,b)=>a.order-b.order); }
+/* ---- Activity dependency links (finish-to-start, no lag) ----
+   activity.predecessorIds: array of activity ids that must finish before this one starts.
+   Moving a predecessor's dates forward or back automatically shifts every activity
+   linked to it, and cascades onward through the whole chain. */
+function getDescendants(id, seen){
+  seen = seen || new Set();
+  state.activities.forEach(x=>{
+    if((x.predecessorIds||[]).includes(id) && !seen.has(x.id)){
+      seen.add(x.id);
+      getDescendants(x.id, seen);
+    }
+  });
+  return seen;
+}
+function applyDependencyCascade(){
+  const acts = state.activities;
+  const idSet = new Set(acts.map(a=>a.id));
+  const inDegree = {};
+  acts.forEach(a=> inDegree[a.id] = (a.predecessorIds||[]).filter(pid=>idSet.has(pid)).length);
+  const queue = acts.filter(a=>inDegree[a.id]===0).map(a=>a.id);
+  const order = [];
+  while(queue.length){
+    const id = queue.shift();
+    order.push(id);
+    acts.forEach(x=>{
+      if((x.predecessorIds||[]).includes(id)){
+        inDegree[x.id]--;
+        if(inDegree[x.id]===0) queue.push(x.id);
+      }
+    });
+  }
+  order.forEach(id=>{
+    const a = acts.find(x=>x.id===id);
+    const preds = (a.predecessorIds||[]).map(pid=>acts.find(x=>x.id===pid)).filter(Boolean);
+    if(preds.length===0) return;
+    let latestFinish = null;
+    preds.forEach(p=>{ if(!latestFinish || toDate(p.plannedFinish)>toDate(latestFinish)) latestFinish = p.plannedFinish; });
+    if(!latestFinish) return;
+    const newStart = nextWorkingDay(toISO(addDays(toDate(latestFinish),1)));
+    if(newStart===a.plannedStart) return;
+    const duration = Math.max(1, calculateWorkingDays(a.plannedStart, a.plannedFinish));
+    a.plannedStart = newStart;
+    a.plannedFinish = addWorkingDays(newStart, duration);
+  });
+}
+function moveWorkPackage(id, dir){
+  const wp = state.workPackages.find(w=>w.id===id);
+  if(!wp) return;
+  const siblings = childWps(wp.parentId);
+  const idx = siblings.findIndex(w=>w.id===id);
+  const swapIdx = idx+dir;
+  if(swapIdx<0 || swapIdx>=siblings.length) return;
+  const other = siblings[swapIdx];
+  const tmp = wp.order; wp.order = other.order; other.order = tmp;
+  saveState(); renderProgramme();
+}
 function activityDuration(a){ return calculateWorkingDays(a.plannedStart,a.plannedFinish); }
 
 function activityStage(a){
@@ -553,10 +615,10 @@ function barVisual(a){
 function barVisualPrint(a){
   if(a.color){
     const stage = activityStage(a);
-    return { bg:a.color, dashed:false, opacity: stage==="not-started" ? 0.55 : 1 };
+    return { bg:a.color, dashed:false, opacity: stage==="not-started" ? 0.7 : 1 };
   }
   const status = activityStatus(a);
-  const map = {ahead:"#1F5A2D", on:"#5B665E", behind:"#B4560F", "not-started":"#FFFFFF"};
+  const map = {ahead:"#1E9E45", on:"#2E6DA4", behind:"#E0740F", "not-started":"#FFFFFF"};
   return { bg:map[status], dashed: status==="not-started", opacity:1 };
 }
 function asOfDate(){ return state.dropline && state.dropline.date ? state.dropline.date : toISO(new Date()); }
@@ -653,21 +715,28 @@ function renderProgramme(){
   rows.forEach(r=>{
     if(r.type==="wp"){
       const hasKids = childWps(r.item.id).length>0 || activitiesInWp(r.item.id).length>0;
+      const siblings = childWps(r.item.parentId);
+      const sIdx = siblings.findIndex(w=>w.id===r.item.id);
+      const isFirst = sIdx<=0, isLast = sIdx>=siblings.length-1;
       treeHtml += '<div class="row wp" data-wpid="'+r.item.id+'">'+
         '<div class="row-label-cell indent-'+Math.min(r.depth,2)+'" data-toggle="'+r.item.id+'">'+
         '<span class="chevron'+(hasKids?"":" leaf")+(r.item.expanded?"":" collapsed")+'">'+chevronSvg()+'</span>'+
         '<span class="row-label">'+esc(r.item.name)+'</span></div>'+
         '<div class="row-actions">'+
+        '<button class="icon-btn" data-move-wp-up="'+r.item.id+'" title="Move up"'+(isFirst?" disabled":"")+'>'+upSvg()+'</button>'+
+        '<button class="icon-btn" data-move-wp-down="'+r.item.id+'" title="Move down"'+(isLast?" disabled":"")+'>'+downSvg()+'</button>'+
         '<button class="icon-btn" data-add-activity="'+r.item.id+'" title="Add activity">'+plusSvg()+'</button>'+
         '<button class="icon-btn" data-edit-wp="'+r.item.id+'" title="Rename">'+editSvg()+'</button>'+
         '<button class="icon-btn" data-del-wp="'+r.item.id+'" title="Delete">'+trashSvg()+'</button>'+
         '</div></div>';
     } else {
       const a=r.item;
+      const predNames = (a.predecessorIds||[]).map(pid=>{ const p=state.activities.find(x=>x.id===pid); return p?p.name:null; }).filter(Boolean);
       treeHtml += '<div class="row activity" data-actid="'+a.id+'">'+
         '<div class="row-label-cell indent-'+Math.min(r.depth,2)+'" data-open-activity="'+a.id+'">'+
         '<span class="chevron leaf">'+chevronSvg()+'</span>'+
         '<span class="row-label">'+esc(a.name)+'</span>'+
+        (predNames.length? ' <span class="link-badge" title="Starts after: '+esc(predNames.join(", "))+'">'+linkSvg()+'</span>' : '') +
         (activityStage(a)!=="not-started" ? ' <span class="pill status-'+activityStatus(a)+'" style="padding:1px 7px; font-size:10px;">'+(a.percentComplete||0)+'%</span>' : '') +
         '</div>'+
         '<div class="row-actions">'+
@@ -716,6 +785,7 @@ function renderProgramme(){
 
   function xFor(iso){ return Math.round((toDate(iso)-range.start)/DAY_MS)*dayWidth; }
 
+  const barPos = {};
   rows.forEach((r,idx)=>{
     if(r.type!=="activity") return;
     const a=r.item;
@@ -725,6 +795,7 @@ function renderProgramme(){
     const left = xFor(a.plannedStart);
     const width = Math.max(dayWidth-4, spanDays*dayWidth-4);
     const top = idx*38 + 9;
+    barPos[a.id] = {left:left+2, top, width};
     const status = activityStatus(a);
     const stage = activityStage(a);
     const pct = Math.max(0, Math.min(100, a.percentComplete||0));
@@ -746,6 +817,26 @@ function renderProgramme(){
       }
     }
   });
+
+  let connectorPaths = '';
+  rows.forEach(r=>{
+    if(r.type!=="activity") return;
+    const a=r.item;
+    (a.predecessorIds||[]).forEach(pid=>{
+      const p = barPos[pid], s = barPos[a.id];
+      if(!p || !s) return;
+      const x1=p.left+p.width, y1=p.top+10, x2=s.left, y2=s.top+10;
+      const midX = x2>x1+10 ? x1+Math.max(8,(x2-x1)/2) : x1+8;
+      const path = y1===y2 ? ('M'+x1+','+y1+' L'+x2+','+y2) : ('M'+x1+','+y1+' L'+midX+','+y1+' L'+midX+','+y2+' L'+x2+','+y2);
+      connectorPaths += '<path d="'+path+'" fill="none" stroke="#8B968E" stroke-width="1.4" marker-end="url(#depArrow)"/>';
+    });
+  });
+  if(connectorPaths){
+    ganttBody += '<svg style="position:absolute; top:0; left:0; width:'+ganttWidth+'px; height:'+bodyHeight+'px; pointer-events:none; z-index:2; overflow:visible;">'+
+      '<defs><marker id="depArrow" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#8B968E"/></marker></defs>'+
+      connectorPaths+
+    '</svg>';
+  }
 
   if(state.dropline && state.dropline.date){
     const dl = toDate(state.dropline.date);
@@ -775,6 +866,8 @@ function renderProgramme(){
     const wp = state.workPackages.find(w=>w.id===el.dataset.toggle);
     wp.expanded = !wp.expanded; saveState(); renderProgramme();
   }));
+  frame.querySelectorAll("[data-move-wp-up]").forEach(el=>el.addEventListener("click", ()=> moveWorkPackage(el.dataset.moveWpUp, -1)));
+  frame.querySelectorAll("[data-move-wp-down]").forEach(el=>el.addEventListener("click", ()=> moveWorkPackage(el.dataset.moveWpDown, 1)));
   frame.querySelectorAll("[data-add-activity]").forEach(el=>el.addEventListener("click", ()=> openActivityModal(null, el.dataset.addActivity)));
   frame.querySelectorAll("[data-edit-wp]").forEach(el=>el.addEventListener("click", ()=> openWpModal(el.dataset.editWp)));
   frame.querySelectorAll("[data-del-wp]").forEach(el=>el.addEventListener("click", ()=> deleteWp(el.dataset.delWp)));
@@ -787,6 +880,7 @@ function renderProgramme(){
 }
 
 function chevronSvg(){ return '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3l3 4 3-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+function linkSvg(){ return '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M5 7l2-2M4.2 8.3L2.6 9.9a1.9 1.9 0 0 1-2.7-2.7l1.9-1.9a1.9 1.9 0 0 1 2.7 0M7.8 3.7L9.4 2.1a1.9 1.9 0 0 1 2.7 2.7L10.2 6.7a1.9 1.9 0 0 1-2.7 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
 function plusSvg(){ return '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'; }
 function editSvg(){ return '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2L4 10l-2.6.6L2 8 8.5 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>'; }
 function trashSvg(){ return '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3.5h8M4.5 3.5V2h3v1.5M3 3.5l.5 7h5l.5-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
@@ -837,6 +931,13 @@ function openActivityModal(id, presetWpId){
       '<input type="number" min="0" class="lr-qty" data-role="'+esc(role.name)+'" value="'+(val!==""?val:role.defaultQty||1)+'"></div>';
   }).join('');
 
+  const blockedPredIds = editing ? getDescendants(editing.id) : new Set();
+  const predCandidates = state.activities.filter(x=> x.id!==(editing?editing.id:null) && !blockedPredIds.has(x.id));
+  const wpNameById = {}; state.workPackages.forEach(w=> wpNameById[w.id]=w.name);
+  const predOptions = predCandidates.map(x=>
+    '<label class="pred-pick"><input type="checkbox" class="pred-check" value="'+x.id+'"'+((editing&&(editing.predecessorIds||[]).includes(x.id))?" checked":"")+'> '+esc(x.name)+' <span class="pred-wp">'+esc(wpNameById[x.workPackageId]||"")+'</span></label>'
+  ).join('');
+
   const body =
     '<div class="field"><label for="actName">Activity name</label><input id="actName" type="text" value="'+(editing?esc(editing.name):"")+'" placeholder="e.g. Drainage Run 1"></div>'+
     '<div class="field"><label for="actWp">Work package</label><select id="actWp">'+wpOptions+'</select></div>'+
@@ -845,6 +946,9 @@ function openActivityModal(id, presetWpId){
     '<div class="field"><label for="actFinish">Finish date</label><input id="actFinish" type="date" value="'+(editing?editing.plannedFinish:"")+'"></div>'+
     '</div>'+
     '<div class="duration-hint" id="durHint"></div>'+
+    '<div class="field" style="margin-top:14px;"><label>Depends on <span style="font-weight:400; color:var(--text-muted);">— starts the working day after these finish, and moves automatically if they do</span></label>'+
+    (predOptions? '<div class="pred-list">'+predOptions+'</div>' : '<p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">No other activities to link to yet.</p>')+
+    '</div>'+
     '<div class="field" style="margin-top:14px;"><label>Bar colour</label>'+
     '<div class="swatch-row" id="colorSwatches">'+
     '<button type="button" class="swatch auto'+(!editing||!editing.color?" selected":"")+'" data-color="" title="Automatic (by programme status)">Auto</button>'+
@@ -884,9 +988,10 @@ function openActivityModal(id, presetWpId){
         const q = document.querySelector('.lr-qty[data-role="'+CSS.escape(chk.dataset.role)+'"]').value;
         labour.push({roleName:chk.dataset.role, qty:Number(q)||1});
       });
+      const predecessorIds = Array.from(document.querySelectorAll(".pred-check:checked")).map(el=>el.value);
       let target;
       if(editing){
-        target=editing; target.name=name; target.workPackageId=wpId; target.plannedStart=start; target.plannedFinish=finish; target.labour=labour; target.color=selectedColor||null;
+        target=editing; target.name=name; target.workPackageId=wpId; target.plannedStart=start; target.plannedFinish=finish; target.labour=labour; target.color=selectedColor||null; target.predecessorIds=predecessorIds;
         const pctEl = document.getElementById("actPct");
         if(pctEl){
           target.percentComplete = Math.max(0, Math.min(100, Number(pctEl.value)||0));
@@ -897,9 +1002,10 @@ function openActivityModal(id, presetWpId){
         }
       } else {
         target = {id:uid("act"), workPackageId:wpId, name, plannedStart:start, plannedFinish:finish, color:selectedColor||null,
-          actualStart:null, actualFinish:null, percentComplete:0, forecastFinishOverride:null, order:activitiesInWp(wpId).length, labour};
+          actualStart:null, actualFinish:null, percentComplete:0, forecastFinishOverride:null, order:activitiesInWp(wpId).length, labour, predecessorIds};
         state.activities.push(target);
       }
+      applyDependencyCascade();
       saveState(); closeModal(); renderProgramme(); toast(editing?"Activity updated":"Activity added");
     }}
   ]);
@@ -959,6 +1065,8 @@ function deleteActivity(id){
     {label:"Cancel", cls:"btn", action:closeModal},
     {label:"Delete", cls:"btn btn-danger", action:()=>{
       state.activities = state.activities.filter(a=>a.id!==id);
+      state.activities.forEach(a=>{ if(a.predecessorIds) a.predecessorIds = a.predecessorIds.filter(pid=>pid!==id); });
+      applyDependencyCascade();
       saveState(); closeModal(); renderProgramme(); toast("Activity deleted");
     }}
   ]);
@@ -1197,12 +1305,15 @@ function renderIssuePreview(){
   const rev = currentRevision();
   const nextNum = rev.number+1;
   const range = projectRange();
-  let dayCols=[]; let d=new Date(range.start);
-  const totalDays = Math.round((range.end-range.start)/DAY_MS)+1;
-  for(let i=0;i<totalDays;i++){ dayCols.push(new Date(d)); d=addDays(d,1); }
   const rows = buildRowList();
   const dataW = DOC_COLS.reduce((s,c)=>s+c.w,0);
-  const dw = Math.max(3, Math.min(26, (DOC_PAGE_CONTENT_W - dataW - 4) / Math.max(1,totalDays)));
+  const MAX_DAY_W = 26;
+  let totalDays = Math.round((range.end-range.start)/DAY_MS)+1;
+  const minDaysToFillPage = Math.floor((DOC_PAGE_CONTENT_W - dataW - 4) / MAX_DAY_W);
+  if(totalDays < minDaysToFillPage) totalDays = minDaysToFillPage; // pad the timeline with trailing blank days so the chart always fills the page width
+  let dayCols=[]; let d=new Date(range.start);
+  for(let i=0;i<totalDays;i++){ dayCols.push(new Date(d)); d=addDays(d,1); }
+  const dw = Math.max(3, Math.min(MAX_DAY_W, (DOC_PAGE_CONTENT_W - dataW - 4) / Math.max(1,totalDays)));
 
   let monthGroups=[]; let cur=null;
   dayCols.forEach(dt=>{
