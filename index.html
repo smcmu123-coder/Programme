@@ -1272,12 +1272,29 @@ function renderRevisions(){
     '<td class="tnum">'+fmtDate(r.plannedCompletion)+'</td>'+
     '<td class="tnum">'+fmtDate(r.forecastCompletion)+'</td>'+
     '<td>'+esc(r.issuedBy)+'</td>'+
-    '<td>'+(r.snapshot? '<button class="btn" data-view-rev="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button>' : '<span style="font-size:11px; color:var(--text-muted);">No snapshot</span>')+'</td></tr>'
+    '<td style="white-space:nowrap;">'+
+      (r.snapshot? '<button class="btn" data-view-rev="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button>' : '<span style="font-size:11px; color:var(--text-muted);">No snapshot</span>')+
+      ' <button class="icon-btn" data-del-rev="'+r.id+'" title="Delete revision">'+trashSvg()+'</button>'+
+    '</td></tr>'
   ).join('');
   document.getElementById("revTable").innerHTML =
     '<thead><tr><th>Revision</th><th>Description</th><th>Date</th><th>Status date</th><th>Planned completion</th><th>Forecast completion</th><th>Issued by</th><th>Document</th></tr></thead>'+
     '<tbody>'+rows+'</tbody>';
   document.querySelectorAll("[data-view-rev]").forEach(el=>el.addEventListener("click", ()=> viewRevision(el.dataset.viewRev)));
+  document.querySelectorAll("[data-del-rev]").forEach(el=>el.addEventListener("click", ()=> deleteRevision(el.dataset.delRev)));
+}
+function deleteRevision(id){
+  if(state.revisions.length<=1){ toast("You need at least one revision — can't delete the last one"); return; }
+  const rev = state.revisions.find(r=>r.id===id);
+  if(!rev) return;
+  openModal("Delete Rev "+String(rev.number).padStart(2,"0")+"?", '<p style="font-size:13px; color:var(--text-muted);">This removes "'+esc(rev.label)+'" from the revision history and renumbers the remaining revisions in order. This can\'t be undone.</p>', [
+    {label:"Cancel", cls:"btn", action:closeModal},
+    {label:"Delete", cls:"btn btn-danger", action:()=>{
+      state.revisions = state.revisions.filter(r=>r.id!==id);
+      state.revisions.forEach((r,i)=>{ r.number = i; });
+      saveState(); closeModal(); renderRevisions(); renderTopMeta(); toast("Revision deleted and renumbered");
+    }}
+  ]);
 }
 let issueReturnsTo = "programme";
 function issueRevision(){ issueReturnsTo="programme"; showView("issue"); }
