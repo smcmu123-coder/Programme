@@ -119,7 +119,6 @@
   .bar.status-not-started{background:var(--surface); border:1.5px dashed var(--border); color:var(--text-muted);}
   .bar .bar-progress{position:absolute; left:0; top:0; bottom:0; background:rgba(255,255,255,.32);}
   .bar .bar-txt{position:relative; z-index:1; font-size:10.5px; font-weight:700; color:#fff; white-space:nowrap;}
-  .bar-date-label{position:absolute; font-size:8.5px; font-weight:600; color:var(--text-muted); white-space:nowrap; z-index:2; pointer-events:none;}
   .bar.status-not-started .bar-txt{color:var(--text-muted);}
   .bar-slip{position:absolute; height:20px; border-radius:5px; background:repeating-linear-gradient(135deg, var(--amber-bg) 0 5px, var(--holiday-hatch) 5px 6px); border:1px dashed var(--amber); z-index:1; pointer-events:none;}
   .dropline{position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--amber); z-index:6; pointer-events:none;}
@@ -830,7 +829,6 @@ function renderProgramme(){
     const tooltip = esc(a.name)+" — "+fmtDate(a.plannedStart)+" to "+fmtDate(a.plannedFinish)+" ("+dur+" working days) — "+activityStatusLabel(a);
     const visual = barVisual(a);
     const barStyle = "left:"+(left+2)+"px; top:"+top+"px; width:"+width+"px;"+(visual.bg?" background:"+visual.bg+"; opacity:"+visual.opacity+";":"");
-    ganttBody += '<div class="bar-date-label" style="left:'+(left+2)+'px; top:'+(top-11)+'px;">'+fmtDateShort(a.plannedStart)+' – '+fmtDateShort(a.plannedFinish)+'</div>';
     ganttBody += '<div class="bar'+(visual.dashed?" status-not-started":"")+'" style="'+barStyle+'" data-open-activity="'+a.id+'" title="'+tooltip+'">';
     if(stage!=="not-started" && pct>0 && pct<100) ganttBody += '<div class="bar-progress" style="width:'+pct+'%;"></div>';
     ganttBody += '<span class="bar-txt">'+esc(zoom==="week"?label:a.name)+'</span>';
@@ -1388,28 +1386,27 @@ function renderIssuePreview(){
         docCell("finish", fmtDateShort(a.plannedFinish), r.depth);
     }
 
-    bodyRows += '<div style="display:flex; align-items:center; height:30px; border-bottom:1px solid #E3E7E1; background:'+rowBg+';">'+
+    bodyRows += '<div style="display:flex; align-items:center; height:22px; border-bottom:1px solid #E3E7E1; background:'+rowBg+';">'+
       '<div style="display:flex; flex-shrink:0;">'+dataCells+'</div>'+
       '<div style="position:relative; display:flex;">';
     dayCols.forEach(dt=>{
       const we=dt.getDay()===0||dt.getDay()===6, bh=isBankHoliday(dt);
-      bodyRows += '<div style="width:'+dw+'px; height:30px; flex-shrink:0; border-right:1px solid #EEF0ED; background:'+(bh?"#F6E8D2":we?"#EEF0ED":"transparent")+';"></div>';
+      bodyRows += '<div style="width:'+dw+'px; height:22px; flex-shrink:0; border-right:1px solid #EEF0ED; background:'+(bh?"#F6E8D2":we?"#EEF0ED":"transparent")+';"></div>';
     });
     if(r.type==="wp"){
       const roll = wpRollup(r.item.id);
       if(roll){
         const off=Math.round((toDate(roll.start)-range.start)/DAY_MS);
         const span=Math.max(1, Math.round((toDate(roll.finish)-toDate(roll.start))/DAY_MS)+1);
-        bodyRows += '<div style="position:absolute; left:'+(off*dw+1)+'px; top:12px; width:'+(span*dw-2)+'px; height:6px; background:#1A1A1A; border-radius:3px;"></div>';
+        bodyRows += '<div style="position:absolute; left:'+(off*dw+1)+'px; top:8px; width:'+(span*dw-2)+'px; height:6px; background:#1A1A1A; border-radius:3px;"></div>';
       }
     } else {
       const a=r.item;
       const off=Math.round((toDate(a.plannedStart)-range.start)/DAY_MS);
       const span=Math.max(1, Math.round((toDate(a.plannedFinish)-toDate(a.plannedStart))/DAY_MS)+1);
       const visual = barVisualPrint(a);
-      const style = "position:absolute; left:"+(off*dw+1)+"px; top:12px; width:"+(span*dw-2)+"px; height:16px; border-radius:3px; background:"+(visual.bg||"#FFFFFF")+"; opacity:"+visual.opacity+";"+(visual.dashed?" border:1.5px dashed #CBD3CD;":"");
-      const dateLbl = '<div style="position:absolute; left:'+(off*dw+1)+'px; top:1px; width:'+Math.max(span*dw,80)+'px; font-size:6.8px; font-weight:700; color:#5B665E; white-space:nowrap;">'+fmtDateShort(a.plannedStart)+' – '+fmtDateShort(a.plannedFinish)+'</div>';
-      bodyRows += dateLbl+'<div style="'+style+'"></div>';
+      const style = "position:absolute; left:"+(off*dw+1)+"px; top:3px; width:"+(span*dw-2)+"px; height:16px; border-radius:3px; background:"+(visual.bg||"#FFFFFF")+"; opacity:"+visual.opacity+";"+(visual.dashed?" border:1.5px dashed #CBD3CD;":"");
+      bodyRows += '<div style="'+style+'"></div>';
     }
     bodyRows += '</div></div>';
   });
