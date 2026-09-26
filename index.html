@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vantry Programme</title>
+<title>CGC Programme</title>
 <meta name="description" content="Build a construction programme and produce a branded, print-ready programme document with actual-vs-planned progress reporting.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
@@ -258,7 +258,7 @@
   <div class="topbar">
     <div class="brand">
       <div class="brand-badge">CGC</div>
-      <div class="brand-word"><b>Vantry</b> <i>by CheltenhamGreenCivils</i></div>
+      <div class="brand-word"><b>Cheltenham Green Civils</b></div>
     </div>
     <div class="proj-meta" id="projMeta"></div>
     <div class="tabs">
@@ -471,7 +471,7 @@ function defaultState(){
     workPackages:[],
     activities:[],
     dropline: {date:null, label:"STATUS DATE"},
-    revisions:[{id:uid("rev"), number:0, label:"Original Programme", date:today, statusDate:null, plannedCompletion:today, forecastCompletion:today, issuedBy:""}],
+    revisions:[{id:uid("rev"), number:1, label:"Original Programme", date:today, statusDate:null, plannedCompletion:today, forecastCompletion:today, issuedBy:""}],
     nextRevisionSeed:1
   };
 }
@@ -495,6 +495,11 @@ function normalizeState(){
     }
     delete a.predecessorIds;
   });
+  // revisions used to start at REV 00; shift any existing programme onto the REV 01 base once
+  if(state.revisions && state.revisions.length && !state.revNumberBase1){
+    state.revisions.forEach(r=>{ r.number += 1; });
+    state.revNumberBase1 = true;
+  }
 }
 function saveState(){ try{ localStorage.setItem("vantry_programme_v5", JSON.stringify(state)); }catch(e){} }
 loadState();
@@ -1291,7 +1296,7 @@ function deleteRevision(id){
     {label:"Cancel", cls:"btn", action:closeModal},
     {label:"Delete", cls:"btn btn-danger", action:()=>{
       state.revisions = state.revisions.filter(r=>r.id!==id);
-      state.revisions.forEach((r,i)=>{ r.number = i; });
+      state.revisions.forEach((r,i)=>{ r.number = i+1; });
       saveState(); closeModal(); renderRevisions(); renderTopMeta(); toast("Revision deleted and renumbered");
     }}
   ]);
