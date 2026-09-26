@@ -338,8 +338,8 @@
 
     <section class="view" id="view-issue">
       <div class="programme-toolbar">
-        <button class="btn" id="backFromIssue">&larr; Back to programme</button>
-        <span class="status-chip">This is exactly what prints — everything else is hidden automatically.</span>
+        <button class="btn" id="backFromIssue">&larr; Back</button>
+        <span class="status-chip" id="issueStatusChip">This is exactly what prints — choose &ldquo;Save as PDF&rdquo; as the destination in the dialog that opens.</span>
         <button class="btn" id="printBtn" style="margin-left:auto;">Print / Save as PDF</button>
         <button class="btn btn-primary" id="confirmIssueBtn">Confirm &amp; save revision</button>
       </div>
@@ -662,7 +662,7 @@ function plannedPercentComplete(a){
    UI: NAV / TABS
    ============================================================ */
 const views = ["programme","progress","dashboard","revisions","settings","issue"];
-function showView(name){
+function showView(name, viewRev){
   views.forEach(v=>document.getElementById("view-"+v).classList.toggle("active", v===name));
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.view===name));
   if(name==="dashboard") renderDashboard();
@@ -670,7 +670,7 @@ function showView(name){
   if(name==="revisions") renderRevisions();
   if(name==="settings") renderSettings();
   if(name==="programme") renderProgramme();
-  if(name==="issue") renderIssuePreview();
+  if(name==="issue") renderIssuePreview(viewRev||null);
 }
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click", ()=>showView(t.dataset.view)));
 
@@ -1271,16 +1271,26 @@ function renderRevisions(){
     '<td class="tnum">'+(r.statusDate?fmtDate(r.statusDate):"—")+'</td>'+
     '<td class="tnum">'+fmtDate(r.plannedCompletion)+'</td>'+
     '<td class="tnum">'+fmtDate(r.forecastCompletion)+'</td>'+
-    '<td>'+esc(r.issuedBy)+'</td></tr>'
+    '<td>'+esc(r.issuedBy)+'</td>'+
+    '<td>'+(r.snapshot? '<button class="btn" data-view-rev="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button>' : '<span style="font-size:11px; color:var(--text-muted);">No snapshot</span>')+'</td></tr>'
   ).join('');
   document.getElementById("revTable").innerHTML =
-    '<thead><tr><th>Revision</th><th>Description</th><th>Date</th><th>Status date</th><th>Planned completion</th><th>Forecast completion</th><th>Issued by</th></tr></thead>'+
+    '<thead><tr><th>Revision</th><th>Description</th><th>Date</th><th>Status date</th><th>Planned completion</th><th>Forecast completion</th><th>Issued by</th><th>Document</th></tr></thead>'+
     '<tbody>'+rows+'</tbody>';
+  document.querySelectorAll("[data-view-rev]").forEach(el=>el.addEventListener("click", ()=> viewRevision(el.dataset.viewRev)));
 }
-function issueRevision(){ showView("issue"); }
+let issueReturnsTo = "programme";
+function issueRevision(){ issueReturnsTo="programme"; showView("issue"); }
+function viewRevision(id){
+  const rev = state.revisions.find(r=>r.id===id);
+  if(!rev) return;
+  if(!rev.snapshot){ toast("This revision was issued before snapshots were saved, so it can't be reprinted"); return; }
+  issueReturnsTo = "revisions";
+  showView("issue", rev);
+}
 document.getElementById("issueBtn").addEventListener("click", issueRevision);
 document.getElementById("issueBtn2").addEventListener("click", issueRevision);
-document.getElementById("backFromIssue").addEventListener("click", ()=>showView("programme"));
+document.getElementById("backFromIssue").addEventListener("click", ()=>showView(issueReturnsTo));
 document.getElementById("printBtn").addEventListener("click", ()=> window.print());
 document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
   const nextNum = currentRevision().number+1;
@@ -1288,7 +1298,12 @@ document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
     id:uid("rev"), number:nextNum, label:"Revision "+String(nextNum).padStart(2,"0"),
     date: toISO(new Date()), statusDate: state.dropline.date,
     plannedCompletion: state.project.plannedCompletion, forecastCompletion: forecastCompletionISO(),
-    issuedBy: state.project.projectManager
+    issuedBy: state.project.projectManager,
+    snapshot: {
+      workPackages: JSON.parse(JSON.stringify(state.workPackages)),
+      activities: JSON.parse(JSON.stringify(state.activities)),
+      project: JSON.parse(JSON.stringify(state.project))
+    }
   });
   saveState();
   toast("Revision "+String(nextNum).padStart(2,"0")+" issued");
@@ -1333,9 +1348,17 @@ const DOC_COLS = [
 const BAND_COLORS = ["#DCE8F5","#F3E1E8"];
 const DOC_PAGE_CONTENT_W = 1480; /* fits printable width of A3 landscape (420mm - 20mm margins) */
 
-function renderIssuePreview(){
-  const rev = currentRevision();
-  const nextNum = rev.number+1;
+function renderIssuePreview(viewRev){
+  const isHistorical = !!(viewRev && viewRev.snapshot);
+  let restoreState = null;
+  if(isHistorical){
+    restoreState = { workPackages: state.workPackages, activities: state.activities, project: state.project, dropline: state.dropline };
+    state.workPackages = viewRev.snapshot.workPackages;
+    state.activities = viewRev.snapshot.activities;
+    state.project = viewRev.snapshot.project;
+    state.dropline = { date: viewRev.statusDate, label: state.dropline.label };
+  }
+  const nextNum = isHistorical ? viewRev.number : currentRevision().number+1;
   const range = projectRange();
   const rows = buildRowList();
   const dataW = DOC_COLS.reduce((s,c)=>s+c.w,0);
@@ -1414,7 +1437,7 @@ function renderIssuePreview(){
   const totalActivities = state.activities.length;
   const varianceDays = projectVarianceDays();
   const varianceLabel = varianceDays===0?"On programme":(varianceDays<0? Math.abs(varianceDays)+" days ahead" : varianceDays+" days behind");
-  const revDate = fmtDate(toISO(new Date()));
+  const revDate = isHistorical ? fmtDate(viewRev.date) : fmtDate(toISO(new Date()));
 
   document.getElementById("docPage").innerHTML =
     '<div class="doc-header">'+
@@ -1439,6 +1462,25 @@ function renderIssuePreview(){
       '<div class="ttb-col ttb-proj" style="flex:2.3;"><div style="font-weight:800; font-size:13px;">'+esc(state.project.name)+'</div><div style="font-size:11px; color:#2E6DA4; font-weight:600; margin-top:3px;">'+esc(state.project.principalContractor)+'</div></div>'+
     '</div>'+
     '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+String(nextNum).padStart(2,"0")+'</span><span>Issued '+revDate+' · Page 1 of 1</span></div>';
+
+  const confirmBtn = document.getElementById("confirmIssueBtn");
+  const chip = document.getElementById("issueStatusChip");
+  if(isHistorical){
+    confirmBtn.style.display = "none";
+    chip.textContent = "Viewing Rev "+String(viewRev.number).padStart(2,"0")+" exactly as it was issued on "+fmtDate(viewRev.date)+" — read-only.";
+  } else {
+    confirmBtn.style.display = "";
+    chip.textContent = document.getElementById("printBtn")
+      ? "This is exactly what prints — choose “Save as PDF” as the destination in the dialog that opens."
+      : "This mirrors the layout of your issued PDF programme.";
+  }
+
+  if(restoreState){
+    state.workPackages = restoreState.workPackages;
+    state.activities = restoreState.activities;
+    state.project = restoreState.project;
+    state.dropline = restoreState.dropline;
+  }
 }
 function docCell(key, value, depth, isName){
   const col = DOC_COLS.find(c=>c.key===key);
