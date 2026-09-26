@@ -119,6 +119,7 @@
   .bar.status-not-started{background:var(--surface); border:1.5px dashed var(--border); color:var(--text-muted);}
   .bar .bar-progress{position:absolute; left:0; top:0; bottom:0; background:rgba(255,255,255,.32);}
   .bar .bar-txt{position:relative; z-index:1; font-size:10.5px; font-weight:700; color:#fff; white-space:nowrap;}
+  .bar-date-label{position:absolute; font-size:8.5px; font-weight:600; color:var(--text-muted); white-space:nowrap; z-index:2; pointer-events:none;}
   .bar.status-not-started .bar-txt{color:var(--text-muted);}
   .bar-slip{position:absolute; height:20px; border-radius:5px; background:repeating-linear-gradient(135deg, var(--amber-bg) 0 5px, var(--holiday-hatch) 5px 6px); border:1px dashed var(--amber); z-index:1; pointer-events:none;}
   .dropline{position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--amber); z-index:6; pointer-events:none;}
@@ -430,6 +431,22 @@ function addWorkingDays(startISO, n){
   return toISO(d);
 }
 function nextWorkingDay(iso){ let d=toDate(iso); while(!isWorkingDay(d)) d=addDays(d,1); return toISO(d); }
+function shiftWorkingDays(iso, n){
+  let d=toDate(iso);
+  if(n===0) return iso;
+  const dir = n>0?1:-1;
+  let count=0;
+  while(count<Math.abs(n)){ d=addDays(d,dir); if(isWorkingDay(d)) count+=1; }
+  return toISO(d);
+}
+function workingDayOffset(fromISO, toISOStr){
+  if(fromISO===toISOStr) return 0;
+  const target = toDate(toISOStr);
+  const dir = target>toDate(fromISO) ? 1 : -1;
+  let d=toDate(fromISO), count=0, guard=0;
+  while(toISO(d)!==toISOStr && guard<3000){ d=addDays(d,dir); if(isWorkingDay(d)) count+=dir; guard++; }
+  return count;
+}
 function fmtDate(iso){ if(!iso) return "—"; const d=toDate(iso); return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}); }
 function fmtDateShort(iso){ if(!iso) return "—"; const d=toDate(iso); return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}); }
 
@@ -471,7 +488,14 @@ function loadState(){
 function normalizeState(){
   if(!state.project.jobNo) state.project.jobNo = "";
   if(state.project.drawnBy===undefined) state.project.drawnBy = "";
-  state.activities.forEach(a=>{ if(a.color===undefined) a.color = null; if(!a.predecessorIds) a.predecessorIds = []; });
+  state.activities.forEach(a=>{
+    if(a.color===undefined) a.color = null;
+    if(!a.predecessors){
+      // migrate legacy predecessorIds (rigid next-working-day links) to lag-based links
+      a.predecessors = (a.predecessorIds||[]).map(pid=>({id:pid, lag:1}));
+    }
+    delete a.predecessorIds;
+  });
 }
 function saveState(){ try{ localStorage.setItem("vantry_programme_v5", JSON.stringify(state)); }catch(e){} }
 loadState();
@@ -481,14 +505,16 @@ loadState();
    ============================================================ */
 function activitiesInWp(wpId){ return state.activities.filter(a=>a.workPackageId===wpId).sort((a,b)=>a.order-b.order); }
 function childWps(parentId){ return state.workPackages.filter(w=>w.parentId===parentId).sort((a,b)=>a.order-b.order); }
-/* ---- Activity dependency links (finish-to-start, no lag) ----
-   activity.predecessorIds: array of activity ids that must finish before this one starts.
-   Moving a predecessor's dates forward or back automatically shifts every activity
-   linked to it, and cascades onward through the whole chain. */
+/* ---- Activity dependency links (finish-to-start, with a lag that can be negative) ----
+   activity.predecessors: array of {id, lag} — lag is the working-day offset between that
+   predecessor's finish and this activity's start, captured from whatever start date you
+   actually chose (so linked activities can overlap on purpose). Moving a predecessor's
+   dates forward or back shifts every linked activity by that same fixed offset, and
+   cascades onward through the whole chain. */
 function getDescendants(id, seen){
   seen = seen || new Set();
   state.activities.forEach(x=>{
-    if((x.predecessorIds||[]).includes(id) && !seen.has(x.id)){
+    if((x.predecessors||[]).some(p=>p.id===id) && !seen.has(x.id)){
       seen.add(x.id);
       getDescendants(x.id, seen);
     }
@@ -499,14 +525,14 @@ function applyDependencyCascade(){
   const acts = state.activities;
   const idSet = new Set(acts.map(a=>a.id));
   const inDegree = {};
-  acts.forEach(a=> inDegree[a.id] = (a.predecessorIds||[]).filter(pid=>idSet.has(pid)).length);
+  acts.forEach(a=> inDegree[a.id] = (a.predecessors||[]).filter(p=>idSet.has(p.id)).length);
   const queue = acts.filter(a=>inDegree[a.id]===0).map(a=>a.id);
   const order = [];
   while(queue.length){
     const id = queue.shift();
     order.push(id);
     acts.forEach(x=>{
-      if((x.predecessorIds||[]).includes(id)){
+      if((x.predecessors||[]).some(p=>p.id===id)){
         inDegree[x.id]--;
         if(inDegree[x.id]===0) queue.push(x.id);
       }
@@ -514,13 +540,14 @@ function applyDependencyCascade(){
   }
   order.forEach(id=>{
     const a = acts.find(x=>x.id===id);
-    const preds = (a.predecessorIds||[]).map(pid=>acts.find(x=>x.id===pid)).filter(Boolean);
+    const preds = (a.predecessors||[]).map(p=>({act:acts.find(x=>x.id===p.id), lag:p.lag})).filter(p=>p.act);
     if(preds.length===0) return;
-    let latestFinish = null;
-    preds.forEach(p=>{ if(!latestFinish || toDate(p.plannedFinish)>toDate(latestFinish)) latestFinish = p.plannedFinish; });
-    if(!latestFinish) return;
-    const newStart = nextWorkingDay(toISO(addDays(toDate(latestFinish),1)));
-    if(newStart===a.plannedStart) return;
+    let newStart = null;
+    preds.forEach(p=>{
+      const candidate = shiftWorkingDays(p.act.plannedFinish, p.lag);
+      if(!newStart || toDate(candidate)>toDate(newStart)) newStart = candidate;
+    });
+    if(!newStart || newStart===a.plannedStart) return;
     const duration = Math.max(1, calculateWorkingDays(a.plannedStart, a.plannedFinish));
     a.plannedStart = newStart;
     a.plannedFinish = addWorkingDays(newStart, duration);
@@ -731,7 +758,7 @@ function renderProgramme(){
         '</div></div>';
     } else {
       const a=r.item;
-      const predNames = (a.predecessorIds||[]).map(pid=>{ const p=state.activities.find(x=>x.id===pid); return p?p.name:null; }).filter(Boolean);
+      const predNames = (a.predecessors||[]).map(pl=>{ const p=state.activities.find(x=>x.id===pl.id); return p?p.name+(pl.lag<0?" (overlap)":""):null; }).filter(Boolean);
       treeHtml += '<div class="row activity" data-actid="'+a.id+'">'+
         '<div class="row-label-cell indent-'+Math.min(r.depth,2)+'" data-open-activity="'+a.id+'">'+
         '<span class="chevron leaf">'+chevronSvg()+'</span>'+
@@ -803,6 +830,7 @@ function renderProgramme(){
     const tooltip = esc(a.name)+" — "+fmtDate(a.plannedStart)+" to "+fmtDate(a.plannedFinish)+" ("+dur+" working days) — "+activityStatusLabel(a);
     const visual = barVisual(a);
     const barStyle = "left:"+(left+2)+"px; top:"+top+"px; width:"+width+"px;"+(visual.bg?" background:"+visual.bg+"; opacity:"+visual.opacity+";":"");
+    ganttBody += '<div class="bar-date-label" style="left:'+(left+2)+'px; top:'+(top-11)+'px;">'+fmtDateShort(a.plannedStart)+' – '+fmtDateShort(a.plannedFinish)+'</div>';
     ganttBody += '<div class="bar'+(visual.dashed?" status-not-started":"")+'" style="'+barStyle+'" data-open-activity="'+a.id+'" title="'+tooltip+'">';
     if(stage!=="not-started" && pct>0 && pct<100) ganttBody += '<div class="bar-progress" style="width:'+pct+'%;"></div>';
     ganttBody += '<span class="bar-txt">'+esc(zoom==="week"?label:a.name)+'</span>';
@@ -822,8 +850,8 @@ function renderProgramme(){
   rows.forEach(r=>{
     if(r.type!=="activity") return;
     const a=r.item;
-    (a.predecessorIds||[]).forEach(pid=>{
-      const p = barPos[pid], s = barPos[a.id];
+    (a.predecessors||[]).forEach(pl=>{
+      const p = barPos[pl.id], s = barPos[a.id];
       if(!p || !s) return;
       const x1=p.left+p.width, y1=p.top+10, x2=s.left, y2=s.top+10;
       const midX = x2>x1+10 ? x1+Math.max(8,(x2-x1)/2) : x1+8;
@@ -935,7 +963,7 @@ function openActivityModal(id, presetWpId){
   const predCandidates = state.activities.filter(x=> x.id!==(editing?editing.id:null) && !blockedPredIds.has(x.id));
   const wpNameById = {}; state.workPackages.forEach(w=> wpNameById[w.id]=w.name);
   const predOptions = predCandidates.map(x=>
-    '<label class="pred-pick"><input type="checkbox" class="pred-check" value="'+x.id+'"'+((editing&&(editing.predecessorIds||[]).includes(x.id))?" checked":"")+'> '+esc(x.name)+' <span class="pred-wp">'+esc(wpNameById[x.workPackageId]||"")+'</span></label>'
+    '<label class="pred-pick"><input type="checkbox" class="pred-check" value="'+x.id+'"'+((editing&&(editing.predecessors||[]).some(p=>p.id===x.id))?" checked":"")+'> '+esc(x.name)+' <span class="pred-wp">'+esc(wpNameById[x.workPackageId]||"")+'</span></label>'
   ).join('');
 
   const body =
@@ -946,7 +974,7 @@ function openActivityModal(id, presetWpId){
     '<div class="field"><label for="actFinish">Finish date</label><input id="actFinish" type="date" value="'+(editing?editing.plannedFinish:"")+'"></div>'+
     '</div>'+
     '<div class="duration-hint" id="durHint"></div>'+
-    '<div class="field" style="margin-top:14px;"><label>Depends on <span style="font-weight:400; color:var(--text-muted);">— starts the working day after these finish, and moves automatically if they do</span></label>'+
+    '<div class="field" style="margin-top:14px;"><label>Depends on <span style="font-weight:400; color:var(--text-muted);">— set the start date above however you like, even overlapping these; the gap or overlap you choose is kept, and everything shifts together if these move</span></label>'+
     (predOptions? '<div class="pred-list">'+predOptions+'</div>' : '<p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">No other activities to link to yet.</p>')+
     '</div>'+
     '<div class="field" style="margin-top:14px;"><label>Bar colour</label>'+
@@ -988,10 +1016,16 @@ function openActivityModal(id, presetWpId){
         const q = document.querySelector('.lr-qty[data-role="'+CSS.escape(chk.dataset.role)+'"]').value;
         labour.push({roleName:chk.dataset.role, qty:Number(q)||1});
       });
-      const predecessorIds = Array.from(document.querySelectorAll(".pred-check:checked")).map(el=>el.value);
+      // Capture the offset between each linked predecessor's finish and the start date
+      // actually chosen here, so overlaps/gaps you pick by hand are preserved when things shift.
+      const predecessors = Array.from(document.querySelectorAll(".pred-check:checked")).map(el=>{
+        const pred = state.activities.find(x=>x.id===el.value);
+        const lag = pred ? workingDayOffset(pred.plannedFinish, start) : 1;
+        return {id:el.value, lag};
+      });
       let target;
       if(editing){
-        target=editing; target.name=name; target.workPackageId=wpId; target.plannedStart=start; target.plannedFinish=finish; target.labour=labour; target.color=selectedColor||null; target.predecessorIds=predecessorIds;
+        target=editing; target.name=name; target.workPackageId=wpId; target.plannedStart=start; target.plannedFinish=finish; target.labour=labour; target.color=selectedColor||null; target.predecessors=predecessors;
         const pctEl = document.getElementById("actPct");
         if(pctEl){
           target.percentComplete = Math.max(0, Math.min(100, Number(pctEl.value)||0));
@@ -1002,7 +1036,7 @@ function openActivityModal(id, presetWpId){
         }
       } else {
         target = {id:uid("act"), workPackageId:wpId, name, plannedStart:start, plannedFinish:finish, color:selectedColor||null,
-          actualStart:null, actualFinish:null, percentComplete:0, forecastFinishOverride:null, order:activitiesInWp(wpId).length, labour, predecessorIds};
+          actualStart:null, actualFinish:null, percentComplete:0, forecastFinishOverride:null, order:activitiesInWp(wpId).length, labour, predecessors};
         state.activities.push(target);
       }
       applyDependencyCascade();
@@ -1065,7 +1099,7 @@ function deleteActivity(id){
     {label:"Cancel", cls:"btn", action:closeModal},
     {label:"Delete", cls:"btn btn-danger", action:()=>{
       state.activities = state.activities.filter(a=>a.id!==id);
-      state.activities.forEach(a=>{ if(a.predecessorIds) a.predecessorIds = a.predecessorIds.filter(pid=>pid!==id); });
+      state.activities.forEach(a=>{ if(a.predecessors) a.predecessors = a.predecessors.filter(p=>p.id!==id); });
       applyDependencyCascade();
       saveState(); closeModal(); renderProgramme(); toast("Activity deleted");
     }}
