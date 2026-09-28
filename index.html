@@ -199,6 +199,23 @@
   .modal-backdrop.open{display:flex;}
   .modal{background:var(--surface); border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.3); width:100%; max-width:480px; border:1px solid var(--border); animation:pop .14s ease-out;}
   @keyframes pop{from{opacity:0; transform:translateY(6px) scale(.99);} to{opacity:1; transform:none;}}
+  .modal.modal-wide{max-width:680px;}
+  .delay-intro{font-size:12.8px; color:var(--text-muted); margin:0 0 12px;}
+  .delay-item{border:1px solid var(--border); border-radius:10px; padding:12px 12px 2px; margin-bottom:10px; background:var(--surface);}
+  .delay-item.missing{border-color:#D0021B; box-shadow:0 0 0 1px #D0021B inset;}
+  .delay-head{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:3px;}
+  .delay-head b{font-size:13.5px;}
+  .delay-meta{font-size:11.8px; color:var(--text-muted); margin-bottom:10px;}
+  .delay-carry{font-size:11px; color:var(--text-muted); margin:-4px 0 10px; font-style:italic;}
+  .warn-box{background:var(--amber-bg); color:var(--text); border:1px solid var(--border); border-radius:9px; padding:10px 12px; font-size:12.5px; margin-bottom:12px;}
+  .warn-box ul{margin:6px 0 0 18px; padding:0;}
+  .info-line{font-size:12.8px; color:var(--text-muted); margin:0 0 12px;}
+  .doc-delays{margin-top:14px;}
+  .doc-delays table{width:100%; border-collapse:collapse; font-size:9.5px; color:#1A1A1A;}
+  .doc-delays th{background:#EEF0ED; text-align:left; font-size:8px; text-transform:uppercase; letter-spacing:.03em; color:#5B665E; padding:5px 6px; border:1px solid #CBD3CD;}
+  .doc-delays td{padding:5px 6px; border:1px solid #CBD3CD; vertical-align:top;}
+  .doc-delays .dnum{display:inline-flex; width:15px; height:15px; border-radius:50%; background:#D0021B; color:#fff; font-size:8px; font-weight:800; align-items:center; justify-content:center;}
+  .doc-delays tr{page-break-inside:avoid;}
   .modal-head{padding:16px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;}
   .modal-head h3{font-size:15px;}
   .modal-body{padding:16px 18px; max-height:64vh; overflow-y:auto;}
@@ -373,7 +390,7 @@
       <button class="icon-btn undo-btn" id="undoBtn" title="Undo (Ctrl+Z)" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5.5 3L2.5 6l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       <button class="icon-btn undo-btn" id="redoBtn" title="Redo (Ctrl+Y)" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M10.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 6h-7a4 4 0 0 0 0 8H9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
     </div>
-    <button class="btn btn-primary btn-sm" id="issueBtn">Issue revision</button>
+    <button class="btn btn-primary btn-sm" id="issueBtn" title="Only needed when activity dates or durations have changed">Issue revision</button>
   </div>
 
   <main>
@@ -382,6 +399,7 @@
         <button class="btn btn-primary" id="addWpBtn">+ Work package</button>
         <button class="btn" id="addActivityBtn">+ Activity</button>
         <button class="btn" id="dropBtn">+ Dropline</button>
+        <button class="btn" id="issueReportBtn" title="Print the current revision with an updated dropline — no new revision needed">Issue progress report</button>
         <div class="seg" id="zoomSeg" style="margin-left:auto;">
           <button data-zoom="week" class="active">Weeks</button>
           <button data-zoom="month">Months</button>
@@ -392,11 +410,15 @@
     </section>
 
     <section class="view" id="view-progress">
-      <div class="note-banner">Report actual progress against the programme: record what's actually happened on site (actual start, % complete, forecast finish) and see variance against the planned dates, activity by activity.</div>
+      <div class="note-banner">Record progress on site (actual start, % complete, forecast finish), then issue a progress report to print the current revision with an updated dropline. You only need a new revision when activity dates or durations change.</div>
       <div class="dash-grid" id="progressStats"></div>
       <div class="panel">
         <div class="panel-head"><h3>Activity progress</h3></div>
         <div class="panel-body" style="padding:0;"><div style="overflow-x:auto;"><table class="rev-table" id="progressTable"></table></div></div>
+      </div>
+      <div class="panel" style="margin-top:14px;">
+        <div class="panel-head"><h3>Issued progress reports</h3><button class="btn btn-primary btn-sm" id="issueReportBtn2">Issue progress report</button></div>
+        <div class="panel-body" style="padding:0;"><div style="overflow-x:auto;"><table class="rev-table" id="reportTable"></table></div></div>
       </div>
     </section>
 
@@ -620,6 +642,7 @@ function defaultState(){
     activities:[],
     dropline: {date:null, label:"STATUS DATE"},
     revisions:[{id:uid("rev"), number:1, label:"Original Programme", date:today, statusDate:null, plannedCompletion:today, forecastCompletion:today, issuedBy:""}],
+    progressReports:[],
     nextRevisionSeed:1
   };
 }
@@ -665,6 +688,7 @@ function syncJobName(){
 function normalizeState(){
   if(!state.project.jobNo) state.project.jobNo = "";
   if(state.project.drawnBy===undefined) state.project.drawnBy = "";
+  if(!Array.isArray(state.progressReports)) state.progressReports = [];
   state.activities.forEach(a=>{
     if(a.color===undefined) a.color = null;
     if(!a.predecessors){
@@ -1723,8 +1747,9 @@ document.getElementById("addActivityBtn").addEventListener("click", ()=>openActi
 /* ============================================================
    MODAL ENGINE
    ============================================================ */
-function openModal(title, bodyHtml, actions){
+function openModal(title, bodyHtml, actions, opts){
   const root=document.getElementById("modalRoot");
+  root.classList.toggle("modal-wide", !!(opts && opts.wide));
   root.innerHTML =
     '<div class="modal-head"><h3>'+esc(title)+'</h3><button class="close-x" id="modalClose">✕</button></div>'+
     '<div class="modal-body">'+bodyHtml+'</div>'+
@@ -1766,7 +1791,9 @@ function renderDashboard(){
     kv("Labour roles in use", activeLabourRoles().length) +
     kv("Weekly dropline", state.dropline.date? fmtDate(state.dropline.date) : "Not set") +
     kv("Revisions issued", state.revisions.length) +
-    kv("Last issued", state.revisions.length>1? fmtDate(state.revisions[state.revisions.length-1].date) : "Not yet issued");
+    kv("Last issued", state.revisions.length>1? fmtDate(state.revisions[state.revisions.length-1].date) : "Not yet issued") +
+    kv("Progress reports issued", state.progressReports.length) +
+    kv("Last progress report", state.progressReports.length? "PR "+pad2(state.progressReports[state.progressReports.length-1].number)+" · data date "+fmtDate(state.progressReports[state.progressReports.length-1].dataDate) : "None yet");
 
   document.getElementById("dashDetails").innerHTML =
     kv("Client", state.project.client) +
@@ -2273,6 +2300,7 @@ function renderProgressView(){
     '<tbody>'+(rows||'<tr><td colspan="8" style="color:var(--text-muted);">No activities yet — add some in the Programme tab.</td></tr>')+'</tbody>';
 
   document.querySelectorAll("[data-update-progress]").forEach(el=>el.addEventListener("click", ()=> openProgressModal(el.dataset.updateProgress)));
+  renderProgressReports();
 }
 
 function openProgressModal(id){
@@ -2345,8 +2373,23 @@ function deleteRevision(id){
   ]);
 }
 let issueReturnsTo = "programme";
-function issueRevision(){ issueReturnsTo="programme"; showView("issue"); }
+function issueRevision(){
+  const rev = currentRevision();
+  const changes = programmeChangesSince(rev);
+  if(changes && changes.length===0){
+    openModal("No programme changes since Rev "+pad2(rev.number),
+      '<p class="info-line">Activity dates and durations are the same as Rev '+pad2(rev.number)+' (issued '+fmtDate(rev.date)+'). A new revision is only needed when these change.</p>'+
+      '<p class="info-line" style="margin:0;">To issue an updated dropline, issue a <b>progress report</b> against Rev '+pad2(rev.number)+'.</p>',
+      [{label:"Cancel", cls:"btn", action:closeModal},
+       {label:"Issue revision anyway", cls:"btn", action:()=>{ closeModal(); startRevisionIssue(); }},
+       {label:"Issue progress report", cls:"btn btn-primary", action:()=>{ closeModal(); openProgressReportFlow(); }}]);
+    return;
+  }
+  startRevisionIssue();
+}
+function startRevisionIssue(){ issueCtx=null; issueReturnsTo="programme"; showView("issue"); }
 function viewRevision(id){
+  issueCtx = null;
   const rev = state.revisions.find(r=>r.id===id);
   if(!rev) return;
   if(!rev.snapshot){ toast("This revision was issued before snapshots were saved, so it can't be reprinted"); return; }
@@ -2358,6 +2401,7 @@ document.getElementById("issueBtn2").addEventListener("click", issueRevision);
 document.getElementById("backFromIssue").addEventListener("click", ()=>showView(issueReturnsTo));
 document.getElementById("printBtn").addEventListener("click", ()=> window.print());
 document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
+  if(issueCtx && issueCtx.report && !issueCtx.saved){ saveProgressReport(issueCtx.report); return; }
   const nextNum = currentRevision().number+1;
   state.revisions.push({
     id:uid("rev"), number:nextNum, label:"Revision "+String(nextNum).padStart(2,"0"),
@@ -2374,6 +2418,222 @@ document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
   toast("Revision "+String(nextNum).padStart(2,"0")+" issued");
   showView("revisions");
 });
+
+/* ============================================================
+   PROGRESS REPORTS — updated dropline against the current revision
+   A progress report never changes the revision. It prints the current
+   revision's bars (as issued) with the latest progress and a dropline
+   at the data date. Any activity behind at the data date has to be
+   given a reason before the report can be issued.
+   ============================================================ */
+let issueCtx = null; // {report, saved} while previewing a progress report
+const PROGRESS_FIELDS = ["percentComplete","actualStart","actualFinish","forecastFinishOverride"];
+const DELAY_FLAG_DAYS = 1; // flag when MORE than this many working days behind at the data date (ignores tasks just a day in)
+const DELAY_REASONS = ["Weather","Awaiting PC / client information","Design change / instruction","Late access / preceding works (other trades)","Services / unforeseen ground conditions","Plant or materials","Labour / resource (own)","Other"];
+const DELAY_RESPONSIBLE = ["CGC","Principal Contractor","Client","Third party","Neutral (e.g. weather)"];
+function pad2(n){ return String(n).padStart(2,"0"); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+/* What's changed in activity dates/durations since a revision was issued.
+   null = can't tell (revision has no snapshot). */
+function programmeChangesSince(rev){
+  if(!rev || !rev.snapshot) return null;
+  const snap = rev.snapshot.activities||[];
+  const changes = [];
+  state.activities.forEach(a=>{
+    const s = snap.find(x=>x.id===a.id);
+    if(!s){ changes.push("Added: "+a.name); return; }
+    if(s.plannedStart!==a.plannedStart || s.plannedFinish!==a.plannedFinish){
+      const d0 = calculateWorkingDays(s.plannedStart,s.plannedFinish), d1 = activityDuration(a);
+      changes.push(a.name+": "+fmtDateShort(s.plannedStart)+"–"+fmtDateShort(s.plannedFinish)+" → "+fmtDateShort(a.plannedStart)+"–"+fmtDateShort(a.plannedFinish)+(d0!==d1?" ("+d0+"d → "+d1+"d)":""));
+    }
+  });
+  snap.forEach(s=>{ if(!state.activities.some(a=>a.id===s.id)) changes.push("Removed: "+s.name); });
+  return changes;
+}
+
+/* The current revision as issued, with today's progress laid over it. */
+function buildReportSnapshot(){
+  const rev = currentRevision();
+  let workPackages, activities, project;
+  if(rev.snapshot){
+    workPackages = clone(rev.snapshot.workPackages);
+    activities = clone(rev.snapshot.activities).map(a=>{
+      const live = state.activities.find(x=>x.id===a.id);
+      if(live) PROGRESS_FIELDS.forEach(k=>{ a[k] = live[k]===undefined ? null : live[k]; });
+      return a;
+    });
+    project = Object.assign(clone(state.project), {programmeStart:rev.snapshot.project.programmeStart, plannedCompletion:rev.snapshot.project.plannedCompletion});
+  } else {
+    workPackages = clone(state.workPackages); activities = clone(state.activities); project = clone(state.project);
+  }
+  workPackages.forEach(w=>{ w.expanded = true; }); // every activity shows on the report
+  return {workPackages, activities, project};
+}
+
+/* How far each activity's dropline point sits behind the data date (working days). */
+function delayInfo(a, dataISO){
+  if(activityStage(a)==="complete") return null;
+  const dur = Math.max(1, activityDuration(a));
+  const pct = Math.max(0, Math.min(100, a.percentComplete||0));
+  const expected = toDate(dataISO)<toDate(a.plannedStart) ? 0 : Math.min(dur, calculateWorkingDays(a.plannedStart, dataISO));
+  const done = pct/100*dur;
+  const behind = Math.round((expected-done)*10)/10;
+  const finishVar = activityVarianceDays(a);
+  if(behind <= DELAY_FLAG_DAYS && finishVar <= 0) return null;
+  return { plannedPct: Math.round(expected/dur*100), actualPct: pct, daysBehind: Math.max(0,behind), finishVar: Math.max(0,finishVar) };
+}
+function computeDelays(snapshot, dataISO){
+  const prev = state.progressReports[state.progressReports.length-1];
+  const wpName = id=>{ const w=snapshot.workPackages.find(x=>x.id===id); return w?w.name:""; };
+  // follow programme order
+  const saved = {workPackages:state.workPackages, activities:state.activities};
+  state.workPackages = snapshot.workPackages; state.activities = snapshot.activities;
+  const ordered = buildRowList().filter(r=>r.type==="activity").map(r=>r.item);
+  state.workPackages = saved.workPackages; state.activities = saved.activities;
+  const out = [];
+  ordered.forEach(a=>{
+    const info = delayInfo(a, dataISO);
+    if(!info) return;
+    const carried = prev && (prev.delays||[]).find(d=>d.actId===a.id);
+    out.push(Object.assign({actId:a.id, name:a.name, wp:wpName(a.workPackageId),
+      reason: carried?carried.reason:"", responsible: carried?carried.responsible:"", note: carried?carried.note:"",
+      carriedFrom: carried?prev.number:null}, info));
+  });
+  return out;
+}
+
+function openProgressReportFlow(){
+  const rev = currentRevision();
+  const changes = programmeChangesSince(rev);
+  const defaultDate = (state.dropline && state.dropline.date) || toISO(new Date());
+  const nextNo = (state.progressReports.length ? state.progressReports[state.progressReports.length-1].number : 0)+1;
+  let warn = '';
+  if(changes===null && rev.number>1) warn = '<div class="warn-box">Rev '+pad2(rev.number)+' has no saved snapshot, so this report uses the current programme dates.</div>';
+  if(changes && changes.length){
+    warn = '<div class="warn-box"><b>'+changes.length+' change'+(changes.length===1?'':'s')+' to activity dates since Rev '+pad2(rev.number)+' was issued.</b> This report shows Rev '+pad2(rev.number)+' as issued, so these won\'t appear. If durations have changed, issue a new revision first.'+
+      '<ul>'+changes.slice(0,6).map(c=>'<li>'+esc(c)+'</li>').join('')+(changes.length>6?'<li>…and '+(changes.length-6)+' more</li>':'')+'</ul></div>';
+  }
+  const body =
+    '<p class="info-line">Progress Report '+pad2(nextNo)+' against <b>Rev '+pad2(rev.number)+'</b> ('+esc(rev.label)+', issued '+fmtDate(rev.date)+'). The revision stays as it is — only the progress and dropline update.</p>'+
+    warn+
+    '<div class="field-row">'+
+      '<div class="field"><label for="prDate">Data date (dropline)</label><input id="prDate" type="date" value="'+defaultDate+'"></div>'+
+      '<div class="field"><label for="prBy">Issued by</label><input id="prBy" type="text" value="'+esc(state.project.projectManager||"")+'"></div>'+
+    '</div>';
+  const actions = [{label:"Cancel", cls:"btn", action:closeModal}];
+  if(changes && changes.length) actions.push({label:"Issue revision instead", cls:"btn", action:()=>{ closeModal(); startRevisionIssue(); }});
+  actions.push({label:"Next", cls:"btn btn-primary", action:()=>{
+    const dataDate = document.getElementById("prDate").value;
+    if(!dataDate){ toast("Pick a data date"); return; }
+    const snapshot = buildReportSnapshot();
+    const report = {
+      id:uid("pr"), number:nextNo, revId:rev.id, revNumber:rev.number, revLabel:rev.label, revDate:rev.date,
+      dataDate, date:toISO(new Date()), issuedBy:document.getElementById("prBy").value.trim(),
+      snapshot, delays: computeDelays(snapshot, dataDate)
+    };
+    closeModal();
+    if(report.delays.length) openDelayReasonsModal(report);
+    else previewProgressReport(report);
+  }});
+  openModal("Issue progress report", body, actions);
+}
+
+function openDelayReasonsModal(report){
+  const opt = (list, val)=> '<option value="">Select…</option>'+list.map(x=>'<option'+(x===val?' selected':'')+'>'+esc(x)+'</option>').join('');
+  const items = report.delays.map((d,i)=>
+    '<div class="delay-item" data-i="'+i+'">'+
+      '<div class="delay-head"><b>'+esc(d.name)+'</b><span class="pill status-behind"><span class="pill-dot"></span>'+
+        (d.daysBehind>DELAY_FLAG_DAYS ? d.daysBehind+' day'+(d.daysBehind===1?'':'s')+' behind' : 'Late finish +'+d.finishVar+'d')+'</span></div>'+
+      '<div class="delay-meta">'+(d.wp?esc(d.wp)+' · ':'')+'Should be '+d.plannedPct+'% · actually '+d.actualPct+'%'+(d.finishVar>0?' · forecast finish +'+d.finishVar+' working day'+(d.finishVar===1?'':'s'):'')+'</div>'+
+      (d.carriedFrom?'<div class="delay-carry">Reason carried over from Progress Report '+pad2(d.carriedFrom)+' — confirm or update.</div>':'')+
+      '<div class="field-row">'+
+        '<div class="field"><label>Reason for delay</label><select data-f="reason">'+opt(DELAY_REASONS,d.reason)+'</select></div>'+
+        '<div class="field"><label>Responsible</label><select data-f="responsible">'+opt(DELAY_RESPONSIBLE,d.responsible)+'</select></div>'+
+      '</div>'+
+      '<div class="field"><label>Notes'+' <span style="font-weight:400;">(required for "Other")</span></label><textarea data-f="note" rows="2" placeholder="e.g. RFI 012 outstanding — invert levels to MH4 not confirmed">'+esc(d.note||"")+'</textarea></div>'+
+    '</div>').join('');
+  const body = '<p class="delay-intro">'+report.delays.length+' activit'+(report.delays.length===1?'y is':'ies are')+' more than '+DELAY_FLAG_DAYS+' working day behind (or forecast to finish late) at the data date ('+fmtDate(report.dataDate)+'). Give a reason for each before the report is issued. These print in the delay register at the end of the report.</p>'+items;
+  openModal("Delayed activities — Progress Report "+pad2(report.number), body, [
+    {label:"Back", cls:"btn", action:()=>{ closeModal(); openProgressReportFlow(); }},
+    {label:"Continue to report", cls:"btn btn-primary", action:()=>{
+      let missing = 0;
+      document.querySelectorAll("#modalRoot .delay-item").forEach(el=>{
+        const d = report.delays[Number(el.dataset.i)];
+        d.reason = el.querySelector('[data-f="reason"]').value;
+        d.responsible = el.querySelector('[data-f="responsible"]').value;
+        d.note = el.querySelector('[data-f="note"]').value.trim();
+        const bad = !d.reason || !d.responsible || (d.reason==="Other" && !d.note);
+        el.classList.toggle("missing", bad);
+        if(bad) missing++;
+      });
+      if(missing){
+        toast("Add a reason and responsible party for "+missing+" more activit"+(missing===1?"y":"ies"));
+        const first = document.querySelector("#modalRoot .delay-item.missing"); if(first) first.scrollIntoView({block:"center", behavior:"smooth"});
+        return;
+      }
+      closeModal(); previewProgressReport(report);
+    }}
+  ], {wide:true});
+}
+
+function previewProgressReport(report){
+  issueCtx = {report, saved:false};
+  issueReturnsTo = "progress";
+  showView("issue");
+}
+function saveProgressReport(report){
+  state.progressReports.push(report);
+  state.dropline = {date:report.dataDate, label:(state.dropline&&state.dropline.label)||"STATUS DATE"}; // keep the on-screen dropline in step
+  saveState();
+  issueCtx = null;
+  toast("Progress Report "+pad2(report.number)+" issued against Rev "+pad2(report.revNumber));
+  renderTopMeta();
+  showView("progress");
+}
+function viewProgressReport(id){
+  const r = state.progressReports.find(x=>x.id===id);
+  if(!r) return;
+  issueCtx = {report:r, saved:true};
+  issueReturnsTo = "progress";
+  showView("issue");
+}
+function deleteProgressReport(id){
+  const r = state.progressReports.find(x=>x.id===id);
+  if(!r) return;
+  openModal("Delete Progress Report "+pad2(r.number)+"?", '<p style="font-size:13px; color:var(--text-muted);">Removes this report and its delay reasons. The remaining reports are renumbered in order. This can\'t be undone (other than with Undo).</p>', [
+    {label:"Cancel", cls:"btn", action:closeModal},
+    {label:"Delete", cls:"btn btn-danger", action:()=>{
+      state.progressReports = state.progressReports.filter(x=>x.id!==id);
+      state.progressReports.forEach((x,i)=>{ x.number = i+1; });
+      saveState(); closeModal(); renderProgressView(); toast("Progress report deleted");
+    }}
+  ]);
+}
+function reportOverallPct(acts){
+  let t=0, d=0; acts.forEach(a=>{ const w=activityDuration(a)||1; t+=w; d+=w*((a.percentComplete||0)/100); });
+  return t>0 ? Math.round(d/t*100) : 0;
+}
+function renderProgressReports(){
+  const el = document.getElementById("reportTable");
+  if(!el) return;
+  const rows = [...state.progressReports].reverse().map(r=>
+    '<tr><td class="rev-badge">PR '+pad2(r.number)+'</td>'+
+    '<td>Rev '+pad2(r.revNumber)+'</td>'+
+    '<td class="tnum">'+fmtDate(r.dataDate)+'</td>'+
+    '<td class="tnum">'+fmtDate(r.date)+'</td>'+
+    '<td class="tnum">'+reportOverallPct(r.snapshot.activities)+'%</td>'+
+    '<td>'+(r.delays.length?'<span class="pill status-behind"><span class="pill-dot"></span>'+r.delays.length+' behind</span>':'<span class="pill status-on"><span class="pill-dot"></span>None</span>')+'</td>'+
+    '<td>'+esc(r.issuedBy||"")+'</td>'+
+    '<td style="white-space:nowrap;"><button class="btn" data-view-pr="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button> <button class="icon-btn" data-del-pr="'+r.id+'" title="Delete report">'+trashSvg()+'</button></td></tr>'
+  ).join('');
+  el.innerHTML = '<thead><tr><th>Report</th><th>Against</th><th>Data date</th><th>Issued</th><th>Complete</th><th>Delays</th><th>Issued by</th><th>Document</th></tr></thead>'+
+    '<tbody>'+(rows||'<tr><td colspan="8" style="color:var(--text-muted);">No progress reports yet. Update progress above, then issue a report to get an updated dropline — no new revision needed.</td></tr>')+'</tbody>';
+  el.querySelectorAll("[data-view-pr]").forEach(b=>b.addEventListener("click", ()=>viewProgressReport(b.dataset.viewPr)));
+  el.querySelectorAll("[data-del-pr]").forEach(b=>b.addEventListener("click", ()=>deleteProgressReport(b.dataset.delPr)));
+}
+document.getElementById("issueReportBtn").addEventListener("click", openProgressReportFlow);
+document.getElementById("issueReportBtn2").addEventListener("click", openProgressReportFlow);
 
 /* ============================================================
    ISSUE PREVIEW (branded document)
@@ -2416,16 +2676,25 @@ const DOC_PAGE_CONTENT_H = 1000; /* fits printable height of A3 landscape (297mm
 const DOC_ROW_H = 22;
 
 function renderIssuePreview(viewRev){
-  const isHistorical = !!(viewRev && viewRev.snapshot);
+  const report = issueCtx && issueCtx.report;
+  if(report) viewRev = null;
+  const isHistorical = report ? !!issueCtx.saved : !!(viewRev && viewRev.snapshot);
   let restoreState = null;
-  if(isHistorical){
+  if(report){
+    restoreState = { workPackages: state.workPackages, activities: state.activities, project: state.project, dropline: state.dropline };
+    state.workPackages = report.snapshot.workPackages;
+    state.activities = report.snapshot.activities;
+    state.project = report.snapshot.project;
+    state.dropline = { date: report.dataDate, label: state.dropline.label };
+  } else if(isHistorical){
     restoreState = { workPackages: state.workPackages, activities: state.activities, project: state.project, dropline: state.dropline };
     state.workPackages = viewRev.snapshot.workPackages;
     state.activities = viewRev.snapshot.activities;
     state.project = viewRev.snapshot.project;
     state.dropline = { date: viewRev.statusDate, label: state.dropline.label };
   }
-  const nextNum = isHistorical ? viewRev.number : currentRevision().number+1;
+  const nextNum = report ? report.revNumber : (isHistorical ? viewRev.number : currentRevision().number+1);
+  const delayIdx = {}; if(report) report.delays.forEach((d,i)=>{ delayIdx[d.actId] = i+1; });
   const range = projectRange();
   const rows = buildRowList();
   const dataW = DOC_COLS.reduce((s,c)=>s+c.w,0);
@@ -2495,6 +2764,7 @@ function renderIssuePreview(viewRev){
       const off=Math.round((toDate(a.plannedStart)-range.start)/DAY_MS);
       const span=Math.max(1, Math.round((toDate(a.plannedFinish)-toDate(a.plannedStart))/DAY_MS)+1);
       const visual = barVisualPrint(a);
+      if(report && delayIdx[a.id] && !a.color){ visual.bg = "#E0740F"; visual.dashed = false; visual.opacity = 1; }
       const style = "position:absolute; left:"+(off*dw+1)+"px; top:3px; width:"+(span*dw-2)+"px; height:16px; border-radius:3px; background:"+(visual.bg||"#FFFFFF")+"; opacity:"+visual.opacity+";"+(visual.dashed?" border:1.5px dashed #CBD3CD;":"");
       bodyRows += '<div style="'+style+'"></div>';
     }
@@ -2524,47 +2794,78 @@ function renderIssuePreview(viewRev){
       const pts = [[sx,0]];
       rows.forEach((r,idx)=>{ const x = r.type==="activity" ? px(r.item) : sx; pts.push([x, idx*RH+1],[x, idx*RH+RH-1]); });
       pts.push([sx,H]);
+      let markers = '';
+      rows.forEach((r,idx)=>{
+        if(r.type!=="activity" || !delayIdx[r.item.id]) return;
+        const x = px(r.item), y = idx*RH+RH/2;
+        markers += '<circle cx="'+x.toFixed(1)+'" cy="'+y+'" r="6.5" fill="#D0021B"/><text x="'+x.toFixed(1)+'" y="'+(y+2.8)+'" text-anchor="middle" font-size="7.5" font-weight="800" fill="#fff" font-family="inherit">'+delayIdx[r.item.id]+'</text>';
+      });
       docProgressLine = '<svg style="position:absolute; left:0; top:0; width:100%; height:'+H+'px; pointer-events:none; overflow:visible;">'+
-        '<polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+        '<polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="1.8" stroke-linejoin="round"/>'+markers+'</svg>';
     }
   }
   const totalActivities = state.activities.length;
   const varianceDays = projectVarianceDays();
   const varianceLabel = varianceDays===0?"On programme":(varianceDays<0? Math.abs(varianceDays)+" days ahead" : varianceDays+" days behind");
-  const revDate = isHistorical ? fmtDate(viewRev.date) : fmtDate(toISO(new Date()));
+  const revDate = report ? fmtDate(report.revDate) : (isHistorical ? fmtDate(viewRev.date) : fmtDate(toISO(new Date())));
+  const reportDate = report ? fmtDate(isHistorical ? report.date : toISO(new Date())) : "";
+  const prNo = report ? pad2(report.number) : "";
+  const docTitle = report ? "Progress Report" : "Short Term Programme";
+  const docRef = 'PRG-'+esc(state.project.name.split(" ")[0])+'-'+pad2(nextNum)+' · Rev '+pad2(nextNum)+(report?' · Progress Report '+prNo:'');
+  const factsHtml = report
+    ? docFact("Data date", fmtDate(report.dataDate))+docFact("Against revision", "Rev "+pad2(nextNum)+" · issued "+revDate)+docFact("Overall complete", reportOverallPct(state.activities)+"%")+
+      docFact("Planned completion", fmtDate(state.project.plannedCompletion))+docFact("Forecast completion", fmtDate(forecastCompletionISO()))+docFact("Activities behind", String(report.delays.length))
+    : docFact("Status date", state.dropline.date?fmtDate(state.dropline.date):"—")+docFact("Programme start", fmtDate(state.project.programmeStart))+docFact("Planned completion", fmtDate(state.project.plannedCompletion));
+  const barText = report
+    ? 'PROGRESS REPORT '+prNo+' — REV '+pad2(nextNum)+' · DATA DATE '+fmtDate(report.dataDate).toUpperCase()+' · '+totalActivities+' ACTIVITIES · '+(report.delays.length? report.delays.length+' BEHIND' : 'NONE BEHIND')
+    : 'PROGRAMME — '+String(totalActivities)+' ACTIVITIES · '+varianceLabel.toUpperCase();
+  let delayRegister = '';
+  if(report){
+    delayRegister = '<div class="doc-delays"><div class="doc-bar" style="margin-top:0;">DELAY REGISTER — '+(report.delays.length? report.delays.length+' ACTIVIT'+(report.delays.length===1?'Y':'IES')+' BEHIND AT '+fmtDate(report.dataDate).toUpperCase() : 'NO ACTIVITIES BEHIND AT '+fmtDate(report.dataDate).toUpperCase())+'</div>'+
+      (report.delays.length?
+      '<table><thead><tr><th style="width:24px;">Ref</th><th>Activity</th><th>Work package</th><th style="width:52px;">Should be</th><th style="width:44px;">Actual</th><th style="width:58px;">Days behind</th><th style="width:60px;">Finish var.</th><th>Reason</th><th style="width:96px;">Responsible</th><th>Notes</th></tr></thead><tbody>'+
+      report.delays.map((d,i)=>'<tr><td><span class="dnum">'+(i+1)+'</span></td><td><b>'+esc(d.name)+'</b></td><td>'+esc(d.wp||"—")+'</td><td>'+d.plannedPct+'%</td><td>'+d.actualPct+'%</td><td>'+d.daysBehind+'</td><td>'+(d.finishVar?'+'+d.finishVar+'d':'—')+'</td><td>'+esc(d.reason)+'</td><td>'+esc(d.responsible)+'</td><td>'+esc(d.note||"")+'</td></tr>').join('')+
+      '</tbody></table>' : '')+
+    '</div>';
+  }
 
   document.getElementById("docPage").innerHTML =
     '<div class="doc-header">'+
       '<div class="doc-logo"><img src="'+CGC_LOGO_DATAURI+'" alt="Cheltenham Green Civils" style="height:40px; width:auto; display:block;"></div>'+
-      '<div class="doc-titleblock"><div class="doc-title">Short Term Programme</div><div class="doc-ref">PRG-'+esc(state.project.name.split(" ")[0])+'-'+String(nextNum).padStart(2,"0")+' · Rev '+String(nextNum).padStart(2,"0")+'</div></div>'+
+      '<div class="doc-titleblock"><div class="doc-title">'+docTitle+'</div><div class="doc-ref">'+docRef+'</div></div>'+
     '</div>'+
     '<div class="doc-rule"></div>'+
     '<div class="doc-facts">'+
-      docFact("Status date", state.dropline.date?fmtDate(state.dropline.date):"—")+docFact("Programme start", fmtDate(state.project.programmeStart))+docFact("Planned completion", fmtDate(state.project.plannedCompletion))+
+      factsHtml+
     '</div>'+
-    '<div class="doc-bar">PROGRAMME — '+String(totalActivities)+' ACTIVITIES · '+varianceLabel.toUpperCase()+'</div>'+
+    '<div class="doc-bar">'+esc(barText)+'</div>'+
     '<div class="doc-gantt-wrap" style="width:'+(dataW+totalDays*dw+2)+'px;">'+headHtml+'<div style="position:relative;">'+bodyRows+docProgressLine+'</div></div>'+
     '<div class="doc-legend">'+
       legendItem("#1F5A2D","Ahead of programme")+legendItem("#5B665E","On programme")+legendItem("#B4560F","Behind programme")+legendItem("#FFFFFF","Not started")+
       '<span><i style="background:#1A1A1A; height:6px; border-radius:3px;"></i>Work package summary</span>'+
       legendItem("#EEF0ED","Weekend")+legendItem("#F6E8D2","UK bank holiday")+
-      (state.dropline && state.dropline.date ? '<span><i style="background:#D0021B; height:2px; border-radius:0;"></i>Progress line at status date (left = behind, right = ahead)</span>' : '')+
+      (state.dropline && state.dropline.date ? '<span><i style="background:#D0021B; height:2px; border-radius:0;"></i>Progress line at '+(report?'data':'status')+' date (left = behind, right = ahead)</span>' : '')+
+      (report && report.delays.length ? '<span><i style="background:#D0021B; border-radius:50%;"></i>Delayed activity — see delay register</span>' : '')+
     '</div>'+
+    delayRegister+
     '<div class="doc-titleblock-grid">'+
-      '<div class="ttb-col" style="flex:1.1;"><div class="ttb-sub"><b>Job No:</b>&nbsp;'+esc(state.project.jobNo||"—")+'</div><div class="ttb-sub ttb-sub-b"><b>Date:</b>&nbsp;'+revDate+'</div></div>'+
-      '<div class="ttb-col" style="flex:1.2;"><div class="ttb-sub"><b>Revision No:</b>&nbsp;'+String(nextNum).padStart(2,"0")+'</div><div class="ttb-sub ttb-sub-b"><b>Rev. date:</b>&nbsp;'+revDate+'</div></div>'+
-      '<div class="ttb-col" style="flex:1.5;"><div class="ttb-sub"><b>Drawn:</b>&nbsp;'+esc(state.project.drawnBy||"")+'</div><div class="ttb-sub ttb-sub-b"><b>Author:</b>&nbsp;'+esc(state.project.projectManager)+'</div></div>'+
+      '<div class="ttb-col" style="flex:1.1;"><div class="ttb-sub"><b>Job No:</b>&nbsp;'+esc(state.project.jobNo||"—")+'</div><div class="ttb-sub ttb-sub-b"><b>Date:</b>&nbsp;'+(report?reportDate:revDate)+'</div></div>'+
+      '<div class="ttb-col" style="flex:1.2;"><div class="ttb-sub"><b>Revision No:</b>&nbsp;'+String(nextNum).padStart(2,"0")+'</div><div class="ttb-sub ttb-sub-b"><b>'+(report?'Report No:':'Rev. date:')+'</b>&nbsp;'+(report?prNo+' (data date '+fmtDate(report.dataDate)+')':revDate)+'</div></div>'+
+      '<div class="ttb-col" style="flex:1.5;"><div class="ttb-sub"><b>Drawn:</b>&nbsp;'+esc(state.project.drawnBy||"")+'</div><div class="ttb-sub ttb-sub-b"><b>'+(report?'Issued by:':'Author:')+'</b>&nbsp;'+esc(report?(report.issuedBy||state.project.projectManager):state.project.projectManager)+'</div></div>'+
       '<div class="ttb-col ttb-proj" style="flex:2.3;"><div style="font-weight:800; font-size:13px;">'+esc(state.project.name)+'</div><div style="font-size:11px; color:#2E6DA4; font-weight:600; margin-top:3px;">'+esc(state.project.principalContractor)+'</div></div>'+
     '</div>'+
-    '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+String(nextNum).padStart(2,"0")+'</span><span>Issued '+revDate+' · Page 1 of 1</span></div>';
+    '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+pad2(nextNum)+(report?' · Progress Report '+prNo:'')+'</span><span>Issued '+(report?reportDate:revDate)+'</span></div>';
 
   padDocToPageBottom(dayCols, dw);
 
   const confirmBtn = document.getElementById("confirmIssueBtn");
   const chip = document.getElementById("issueStatusChip");
+  confirmBtn.textContent = report ? "Confirm & save progress report" : "Confirm & save revision";
   if(isHistorical){
     confirmBtn.style.display = "none";
-    chip.textContent = "Viewing Rev "+String(viewRev.number).padStart(2,"0")+" exactly as it was issued on "+fmtDate(viewRev.date)+" — read-only.";
+    chip.textContent = report
+      ? "Viewing Progress Report "+prNo+" (Rev "+pad2(nextNum)+") exactly as issued on "+fmtDate(report.date)+" — read-only."
+      : "Viewing Rev "+String(viewRev.number).padStart(2,"0")+" exactly as it was issued on "+fmtDate(viewRev.date)+" — read-only.";
   } else {
     confirmBtn.style.display = "";
     chip.textContent = document.getElementById("printBtn")
