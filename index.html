@@ -54,6 +54,12 @@
   .proj-name{font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:32ch;}
   .rev-chip{background:var(--pale-green); color:var(--green); border:1px solid var(--border); padding:2px 9px; border-radius:100px; font-weight:700; font-size:11.5px;}
   .status-chip{font-size:11.5px; color:var(--text-muted); white-space:nowrap;}
+  .theme-btn{width:36px !important; height:36px !important; border:1px solid var(--border) !important; background:var(--surface-2) !important; border-radius:9px !important; color:var(--green) !important;}
+  .theme-btn:hover{background:var(--pale-green) !important;}
+  .undo-group{display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:3px;}
+  .undo-btn{display:inline-flex; align-items:center; gap:5px; width:auto !important; height:auto !important; padding:6px 9px !important; font-size:12.5px; font-weight:600; border-radius:6px;}
+  .undo-btn:disabled{opacity:.35; cursor:default;}
+  @media print{ .undo-group{display:none !important;} }
   .tabs{display:flex; gap:2px; margin-left:auto; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:3px;}
   .tab{border:none; background:transparent; color:var(--text-muted); padding:7px 13px; border-radius:6px; font-weight:600; font-size:12.5px;}
   .tab.active{background:var(--surface); color:var(--green); box-shadow:var(--shadow);}
@@ -119,7 +125,7 @@
   .bar-handle-right{right:0;}
   body.gantt-dragging-move, body.gantt-dragging-move *{cursor:grabbing !important; user-select:none !important;}
   body.gantt-dragging-resize, body.gantt-dragging-resize *{cursor:ew-resize !important; user-select:none !important;}
-  .link-knob{position:absolute; width:12px; height:12px; border-radius:50%; background:#fff; border:2px solid #8B968E; z-index:5; cursor:crosshair; opacity:.45; transition:opacity .12s, transform .12s, border-color .12s; touch-action:none; box-sizing:border-box;}
+  .link-knob{position:absolute; width:12px; height:12px; border-radius:50%; background:var(--surface); border:2px solid #8B968E; z-index:5; cursor:crosshair; opacity:.45; transition:opacity .12s, transform .12s, border-color .12s; touch-action:none; box-sizing:border-box;}
   .bar:hover + .link-knob, .link-knob:hover, .link-knob.active{opacity:1; border-color:#1F5A2D; transform:scale(1.25);}
   .bar.link-target{outline:2px solid #1F5A2D; outline-offset:2px;}
   .bar.link-invalid{outline:2px solid #C0392B; outline-offset:2px;}
@@ -246,6 +252,74 @@
   .ttb-proj{justify-content:center; padding:10px 18px;}
   .ttb-sub{flex:1; padding:9px 14px; font-size:11px; color:#1A1A1A; display:flex; align-items:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .ttb-sub-b{border-top:1.5px solid #1A1A1A;}
+  .job-switch{display:inline-flex; align-items:center; gap:7px; border:1px solid transparent; background:transparent; color:var(--text); padding:3px 8px 3px 6px; border-radius:8px; margin-left:-6px;}
+  .job-switch:hover{border-color:var(--border); background:var(--surface-2);}
+  .job-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .job-count{font-size:10.5px; font-weight:700; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:100px; padding:1px 7px;}
+  .job-list{display:flex; flex-direction:column; gap:6px; margin-bottom:6px;}
+  .job-item{display:flex; align-items:center; gap:10px; padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2);}
+  .job-item.current{border-color:var(--green); background:var(--pale-green);}
+  .job-item .ji-name{flex:1; min-width:0; font-weight:700; font-size:13px;}
+  .job-item .ji-sub{display:block; font-weight:500; font-size:11.5px; color:var(--text-muted);}
+  .la-key .k-heavy{background:rgba(46,109,164,.12); border:1px solid var(--blue);}
+  .lb-table td.cell{font-weight:700; font-variant-numeric:tabular-nums; font-size:12px; min-width:74px;}
+  .lb-table td.cell small{display:block; font-size:10px; font-weight:700;}
+  .lb-table td.short{background:var(--amber-bg); color:var(--amber);}
+  .lb-table td.right{background:var(--pale-green); color:var(--green);}
+  .lb-table td.heavy{background:rgba(46,109,164,.12); color:var(--blue);}
+  .lb-table td.none{color:var(--text-faint); font-weight:400;}
+  .lb-table tr.job-row td{background:var(--surface-2); font-weight:800; border-top:2px solid var(--border);}
+  .lb-table tr.job-row td.sticky{background:var(--surface-2);}
+  .lb-table tr.trade-row td.sticky{padding-left:30px; font-weight:500; color:var(--text-muted);}
+  .lb-table tr.gang-row td{background:var(--surface-2); border-top:2px solid var(--border);}
+  .lb-table tr.gang-row td.sticky{background:var(--surface-2); font-weight:800;}
+  .lb-table .emp-name{background:none; border:none; padding:0; color:var(--text); font-weight:600; text-align:left; cursor:pointer;}
+  .lb-table .emp-name:hover{color:var(--green); text-decoration:underline;}
+  .lb-table .emp-trade{display:block; font-size:11px; color:var(--text-muted); font-weight:500;}
+  .lb-sel{width:100%; min-width:112px; border:1px solid var(--border); border-left-width:4px; border-radius:6px; padding:5px 4px; background:var(--surface); color:var(--text); font-size:12px; font-weight:600;}
+  .lb-sel.unalloc{color:var(--text-faint); font-weight:500;}
+  .lb-sel.gang{background:var(--surface-2);}
+  .lb-table td.selcell{padding:4px 5px;}
+  .move-list{display:flex; flex-direction:column; gap:8px;}
+  .move-item{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:9px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); font-size:12.8px;}
+  .move-item .mv-text{flex:1; min-width:240px;}
+  .move-item .mv-wk{font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--green); margin-right:6px;}
+  .move-item .mv-short{color:var(--amber); font-weight:700;}
+  .move-item .mv-heavy{color:var(--blue); font-weight:700;}
+  .lb-empty{color:var(--text-muted); font-size:13px;}
+  .la-onsite-note{font-size:10px; color:var(--text-muted); font-weight:600;}
+  .la-section{margin-top:22px; padding-top:18px; border-top:1px solid var(--border);}
+  .la-title{font-size:16px; margin-bottom:12px; color:var(--text);}
+  .la-toolbar{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
+  .la-ctrl{display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:var(--text-muted);}
+  .la-ctrl input{border:1px solid var(--border); border-radius:7px; padding:6px 9px; background:var(--surface); color:var(--text);}
+  .la-hint{font-size:12px; color:var(--text-muted); flex:1; min-width:220px;}
+  .la-key{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-muted);}
+  .la-key i{display:inline-block; width:12px; height:12px; border-radius:3px; margin-left:8px;}
+  .la-key .k-short{background:var(--amber-bg); border:1px solid var(--amber);}
+  .la-key .k-ok{background:var(--pale-green); border:1px solid var(--green);}
+  .la-scroll{overflow-x:auto;}
+  .la-table{border-collapse:separate; border-spacing:0; font-size:12.5px; min-width:100%;}
+  .la-table th, .la-table td{border-bottom:1px solid var(--border); border-right:1px solid var(--border); text-align:center; padding:0; height:34px; min-width:38px;}
+  .la-table th{background:var(--surface-2); font-size:10.5px; color:var(--text-muted); font-weight:700;}
+  .la-table .wk th{font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--green); height:26px; border-right:2px solid var(--border);}
+  .la-table .day-h{line-height:1.15; padding:3px 0;}
+  .la-table .day-h b{display:block; font-size:12px; color:var(--text);}
+  .la-table .wk-end{border-right:2px solid var(--border) !important;}
+  .la-table .today{box-shadow:inset 0 -3px 0 var(--green);}
+  .la-table .sticky{position:sticky; left:0; background:var(--surface); z-index:2; text-align:left; padding:0 12px; min-width:170px; font-weight:600;}
+  .la-table .sticky2{position:sticky; left:170px; background:var(--surface); z-index:2; min-width:78px; border-right:2px solid var(--border);}
+  .la-table th.sticky, .la-table th.sticky2{background:var(--surface-2); z-index:3;}
+  .la-table .avail{width:52px; text-align:center; border:1px solid var(--border); border-radius:6px; padding:5px 2px; background:var(--surface); color:var(--text); font-weight:700;}
+  .la-table td.req{font-weight:700; font-variant-numeric:tabular-nums; cursor:default;}
+  .la-table td.req.ok{background:var(--pale-green); color:var(--green);}
+  .la-table td.req.short{background:var(--amber-bg); color:var(--amber);}
+  .la-table td.req.zero{color:var(--text-faint); font-weight:400;}
+  .la-table tr.total td{background:var(--surface-2); font-weight:800; border-top:2px solid var(--border);}
+  .la-table tr.total td.sticky, .la-table tr.total td.sticky2{background:var(--surface-2);}
+  .la-table td.short-total{color:var(--amber);}
+  .la-warn{background:var(--amber-bg); border:1px solid var(--amber); color:var(--amber); border-radius:9px; padding:9px 13px; font-size:12.5px; font-weight:600; margin-bottom:12px;}
+  .la-chip{display:inline-block; background:var(--surface-2); border:1px solid var(--border); border-radius:100px; padding:1px 8px; font-size:11.5px; margin:2px 4px 2px 0; white-space:nowrap;}
   .note-banner{background:var(--pale-green); border:1px solid var(--border); border-radius:9px; padding:9px 13px; font-size:12px; color:var(--text-muted); margin-bottom:12px; display:flex; gap:8px; align-items:flex-start;}
   @media (max-width:820px){
     .programme-frame{flex-direction:column;}
@@ -259,6 +333,12 @@
 
   @media print{
     @page{ size: A3 landscape; margin: 10mm; }
+    /* printouts always use the light (paper) colours, whatever mode the screen is in */
+    :root{ --green:#1F5A2D !important; --green-deep:#163f20 !important; --pale-green:#EDF2EE !important; --grey-green:#D8DFDA !important;
+      --border:#CBD3CD !important; --blue:#2E6DA4 !important; --ink:#1A1A1A !important; --amber:#B4560F !important; --amber-bg:#FBEBDD !important;
+      --slate:#5B665E !important; --bg:#F6F7F5 !important; --surface:#FFFFFF !important; --surface-2:#FAFBFA !important;
+      --text:#1A1A1A !important; --text-muted:#5B665E !important; --text-faint:#8B968E !important;
+      --weekend-bg:#EEF0ED !important; --holiday-bg:#F6E8D2 !important; --holiday-hatch:#E4C48F !important; color-scheme:light !important; }
     html, body{ background:#fff !important; margin:0 !important; }
     .topbar, #view-issue .programme-toolbar, .toast, .modal-backdrop{ display:none !important; }
     main{ display:block !important; }
@@ -284,8 +364,14 @@
       <button class="tab active" data-view="programme">Programme</button>
       <button class="tab" data-view="progress">Progress</button>
       <button class="tab" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="labour">Labour</button>
       <button class="tab" data-view="revisions">Revisions</button>
       <button class="tab" data-view="settings">Settings</button>
+    </div>
+    <button class="icon-btn theme-btn" id="themeBtn" title="Switch to dark mode" aria-label="Toggle light / dark mode"></button>
+    <div class="undo-group">
+      <button class="icon-btn undo-btn" id="undoBtn" title="Undo (Ctrl+Z)" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5.5 3L2.5 6l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+      <button class="icon-btn undo-btn" id="redoBtn" title="Redo (Ctrl+Y)" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M10.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 6h-7a4 4 0 0 0 0 8H9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
     </div>
     <button class="btn btn-primary btn-sm" id="issueBtn">Issue revision</button>
   </div>
@@ -319,6 +405,48 @@
       <div class="dash-panels">
         <div class="panel"><div class="panel-head"><h3>Programme summary</h3></div><div class="panel-body" id="dashSummary"></div></div>
         <div class="panel"><div class="panel-head"><h3>Project details</h3></div><div class="panel-body" id="dashDetails"></div></div>
+      </div>
+      <div class="la-section">
+      <h2 class="la-title">Labour lookahead</h2>
+      <div class="la-toolbar">
+        <div class="la-ctrl"><label for="laFrom">From</label><input type="date" id="laFrom"></div>
+        <div class="seg" id="laWeeksSeg">
+          <button data-weeks="2">2 weeks</button><button data-weeks="4" class="active">4 weeks</button><button data-weeks="6">6 weeks</button>
+        </div>
+        <span class="la-hint" id="laHint">Enter how many of each trade you have on site in the <b>On site</b> column — any day that needs more is flagged.</span>
+      </div>
+      <div class="dash-grid" id="laStats"></div>
+      <div id="laWarn"></div>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Labour required per day</h3><span class="la-key"><i class="k-short"></i>Short of labour <i class="k-ok"></i>Covered</span></div>
+        <div class="panel-body" style="padding:0;"><div class="la-scroll" id="laGrid"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Activities in the lookahead</h3></div>
+        <div class="panel-body" style="padding:0;"><div style="overflow-x:auto;"><table class="rev-table" id="laActs"></table></div></div>
+      </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-labour">
+      <div class="la-toolbar">
+        <div class="seg"><button id="lbPrev" title="Previous week">‹</button><button id="lbToday">This week</button><button id="lbNext" title="Next week">›</button></div>
+        <div class="seg" id="lbWeeksSeg"><button data-weeks="4">4 weeks</button><button data-weeks="6" class="active">6 weeks</button><button data-weeks="8">8 weeks</button></div>
+        <span class="la-hint">Labour needed comes from each job's programme (busiest day of the week per trade). Allocate people to a job week by week below.</span>
+        <button class="btn btn-primary" id="lbAddEmp">+ Employee</button>
+      </div>
+      <div class="dash-grid" id="lbStats"></div>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Job labour balance</h3><span class="la-key"><i class="k-short"></i>Short <i class="k-ok"></i>Right <i class="k-heavy"></i>Heavy</span></div>
+        <div class="panel-body" style="padding:0;"><div class="la-scroll" id="lbBalance"></div></div>
+      </div>
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Suggested moves</h3></div>
+        <div class="panel-body" id="lbMoves"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Weekly allocation board</h3><span style="font-size:11.5px; color:var(--text-muted);">Use a gang's row to move the whole gang at once</span></div>
+        <div class="panel-body" style="padding:0;"><div class="la-scroll" id="lbBoard"></div></div>
       </div>
     </section>
 
@@ -497,12 +625,42 @@ function defaultState(){
 }
 
 let state = null;
+/* ---- Workspace: every job's programme + the shared employee list and weekly allocations ----
+   Each job's programme is stored under its own key. The original single programme stays
+   exactly where it always was (job_main → "vantry_programme_v5"), so nothing is moved or lost. */
+const WS_KEY = "vantry_workspace_v1";
+const JOB_COLOURS = ["#1F5A2D","#2E6DA4","#B4560F","#7A4FB5","#0F7A6C","#B23A2E","#8C6D1F","#5B665E"];
+let ws = null;
+function jobKey(id){ return id==="job_main" ? "vantry_programme_v5" : "vantry_programme_v5__"+id; }
+function loadWorkspace(){
+  try{ const raw = localStorage.getItem(WS_KEY); if(raw) ws = JSON.parse(raw); }catch(e){}
+  if(!ws || !Array.isArray(ws.jobs) || !ws.jobs.length){
+    ws = { jobs:[{id:"job_main", name:"", colour:JOB_COLOURS[0]}], currentJobId:"job_main", employees:[], allocations:{} };
+  }
+  ws.employees = ws.employees || []; ws.allocations = ws.allocations || {};
+  if(!ws.jobs.some(j=>j.id===ws.currentJobId)) ws.currentJobId = ws.jobs[0].id;
+}
+function saveWorkspace(){ try{ localStorage.setItem(WS_KEY, JSON.stringify(ws)); }catch(e){} }
+function currentJob(){ return ws.jobs.find(j=>j.id===ws.currentJobId); }
+function jobDisplayName(j){ return (j && j.name) ? j.name : "Untitled job"; }
+/* Read any job's programme — the live one for the open job, otherwise straight from storage. */
+function getJobProgramme(id){
+  if(id===ws.currentJobId) return state;
+  try{ const raw = localStorage.getItem(jobKey(id)); if(raw) return JSON.parse(raw); }catch(e){}
+  return null;
+}
 function loadState(){
+  if(!ws) loadWorkspace();
   try{
-    const raw = localStorage.getItem("vantry_programme_v5");
-    if(raw){ state = JSON.parse(raw); normalizeState(); return; }
+    const raw = localStorage.getItem(jobKey(ws.currentJobId));
+    if(raw){ state = JSON.parse(raw); normalizeState(); syncJobName(); return; }
   }catch(e){}
   state = defaultState();
+  syncJobName();
+}
+function syncJobName(){
+  const j = currentJob();
+  if(j){ j.name = (state.project.name||"").trim(); j.jobNo = state.project.jobNo||""; }
 }
 function normalizeState(){
   if(!state.project.jobNo) state.project.jobNo = "";
@@ -521,8 +679,66 @@ function normalizeState(){
     state.revNumberBase1 = true;
   }
 }
-function saveState(){ try{ localStorage.setItem("vantry_programme_v5", JSON.stringify(state)); }catch(e){} }
+/* ---- Undo / redo ----
+   Every change in the app goes through saveState(), so history is kept there as whole-programme
+   snapshots. Work package expand/collapse is ignored (it's a view setting, not an edit).
+   Several saves in the same click are merged into one step. History lasts for this session. */
+const HISTORY_LIMIT = 100;
+let undoStack = [], redoStack = [], lastSnap = null, saveBatchOpen = false, mergeNextSave = false;
+function snapOf(st){ return JSON.stringify({s:st, w:{employees:ws.employees, allocations:ws.allocations}}, (k,v)=> k==="expanded" ? undefined : v); }
+function saveState(){
+  try{ localStorage.setItem(jobKey(ws.currentJobId), JSON.stringify(state)); }catch(e){}
+  syncJobName(); saveWorkspace();
+  const snap = snapOf(state);
+  if(lastSnap===null){ lastSnap = snap; return; }
+  if(snap===lastSnap) return;
+  if(!saveBatchOpen && !mergeNextSave){
+    undoStack.push(lastSnap);
+    if(undoStack.length>HISTORY_LIMIT) undoStack.shift();
+    redoStack = [];
+  }
+  mergeNextSave = false;
+  lastSnap = snap;
+  saveBatchOpen = true; setTimeout(()=>{ saveBatchOpen = false; }, 0);
+  updateUndoButtons();
+}
+function restoreSnap(snap){
+  const expanded = {};
+  (state.workPackages||[]).forEach(w=>{ expanded[w.id] = w.expanded; });
+  const parsed = JSON.parse(snap);
+  state = parsed.s;
+  ws.employees = parsed.w.employees; ws.allocations = parsed.w.allocations;
+  (state.workPackages||[]).forEach(w=>{ w.expanded = expanded[w.id]!==undefined ? expanded[w.id] : true; });
+  lastSnap = snap;
+  try{ localStorage.setItem(jobKey(ws.currentJobId), JSON.stringify(state)); }catch(e){}
+  syncJobName(); saveWorkspace();
+  if(document.getElementById("modalBackdrop").classList.contains("open")) closeModal();
+  const active = document.querySelector(".view.active");
+  const name = active ? active.id.replace("view-","") : "programme";
+  showView(name, name==="issue" ? lastViewRev : undefined);
+  renderTopMeta();
+  updateUndoButtons();
+}
+function undo(){
+  if(!undoStack.length){ toast("Nothing to undo"); return; }
+  redoStack.push(lastSnap);
+  restoreSnap(undoStack.pop());
+  toast("Undone");
+}
+function redo(){
+  if(!redoStack.length){ toast("Nothing to redo"); return; }
+  undoStack.push(lastSnap);
+  restoreSnap(redoStack.pop());
+  toast("Redone");
+}
+function updateUndoButtons(){
+  const u = document.getElementById("undoBtn"), r = document.getElementById("redoBtn");
+  if(u) u.disabled = undoStack.length===0;
+  if(r) r.disabled = redoStack.length===0;
+}
 loadState();
+saveWorkspace();
+lastSnap = snapOf(state);
 
 /* ============================================================
    DERIVED HELPERS
@@ -686,25 +902,69 @@ function plannedPercentComplete(a){
 /* ============================================================
    UI: NAV / TABS
    ============================================================ */
-const views = ["programme","progress","dashboard","revisions","settings","issue"];
+const views = ["programme","progress","dashboard","labour","revisions","settings","issue"];
+let lastViewRev = null;
 function showView(name, viewRev){
+  if(name==="issue") lastViewRev = viewRev||null;
   views.forEach(v=>document.getElementById("view-"+v).classList.toggle("active", v===name));
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.view===name));
   if(name==="dashboard") renderDashboard();
   if(name==="progress") renderProgressView();
+  if(name==="labour") renderLabour();
   if(name==="revisions") renderRevisions();
   if(name==="settings") renderSettings();
   if(name==="programme") renderProgramme();
   if(name==="issue") renderIssuePreview(viewRev||null);
 }
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click", ()=>showView(t.dataset.view)));
+/* ---- Light / dark mode ----
+   Follows the device setting until you pick one, then remembers your choice on this device. */
+const THEME_KEY = "vantry_theme";
+const sunSvg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.05 3.05l1.13 1.13M11.82 11.82l1.13 1.13M3.05 12.95l1.13-1.13M11.82 4.18l1.13-1.13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const moonSvg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.8 5.8 0 1 0 7.1 7.1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+function currentTheme(){
+  const t = document.documentElement.getAttribute("data-theme");
+  if(t) return t;
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+function paintThemeBtn(){
+  const dark = currentTheme()==="dark";
+  const b = document.getElementById("themeBtn");
+  b.innerHTML = dark ? sunSvg : moonSvg;
+  b.title = dark ? "Switch to light mode" : "Switch to dark mode";
+}
+(function initTheme(){
+  let saved = null; try{ saved = localStorage.getItem(THEME_KEY); }catch(e){}
+  if(saved==="light"||saved==="dark") document.documentElement.setAttribute("data-theme", saved);
+  paintThemeBtn();
+  if(window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintThemeBtn);
+})();
+document.getElementById("themeBtn").addEventListener("click", ()=>{
+  const next = currentTheme()==="dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+  paintThemeBtn();
+  const active = document.querySelector(".view.active");
+  if(active) showView(active.id.replace("view-",""), active.id==="view-issue" ? lastViewRev : undefined);
+});
+document.getElementById("undoBtn").addEventListener("click", undo);
+document.getElementById("redoBtn").addEventListener("click", redo);
+document.addEventListener("keydown", e=>{
+  if(!(e.ctrlKey||e.metaKey)) return;
+  const tag = (e.target.tagName||"").toLowerCase();
+  if(tag==="input"||tag==="textarea"||tag==="select"||e.target.isContentEditable) return; // leave text editing alone
+  const k = e.key.toLowerCase();
+  if(k==="z" && !e.shiftKey){ e.preventDefault(); undo(); }
+  else if(k==="y" || (k==="z" && e.shiftKey)){ e.preventDefault(); redo(); }
+});
 
 function renderTopMeta(){
   const rev = currentRevision();
   document.getElementById("projMeta").innerHTML =
-    '<span class="proj-name">'+esc(state.project.name)+'</span>'+
+    '<button class="job-switch" id="jobSwitch" title="Switch job"><span class="job-dot" style="background:'+((currentJob()&&currentJob().colour)||"#1F5A2D")+';"></span><span class="proj-name">'+esc(state.project.name||"Untitled job")+'</span>'+(ws.jobs.length>1?'<span class="job-count">'+ws.jobs.length+' jobs</span>':'')+'<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
     '<span class="rev-chip">REV '+String(rev.number).padStart(2,"0")+'</span>'+
     '<span class="status-chip">'+(state.dropline.date? "Status date "+fmtDate(state.dropline.date) : "No status date set")+'</span>';
+  document.getElementById("jobSwitch").addEventListener("click", openJobsModal);
 }
 function toast(msg){
   const t=document.getElementById("toast");
@@ -1220,6 +1480,7 @@ function commitActivityDrag(actId, newStart, newFinish){
     '<p style="font-size:13px; color:var(--text-muted);">Moving "'+esc(a.name)+'" affects '+changedIds.length+' linked activit'+(changedIds.length===1?"y":"ies")+': '+esc(names.join(", "))+'. Move '+(changedIds.length===1?"it":"them")+' to keep the existing relationship?</p>',
     [
       {label:"No, leave them", cls:"btn", action:()=>{
+        mergeNextSave = true; // counts as part of the same drag for undo
         changedIds.forEach(id=>{
           const d = state.activities.find(x=>x.id===id);
           if(d){ d.plannedStart = before[id].start; d.plannedFinish = before[id].finish; }
@@ -1514,8 +1775,458 @@ function renderDashboard(){
     kv("Location", state.project.location) +
     kv("Programme start", fmtDate(state.project.programmeStart));
 
+  renderLookahead();
+
   renderTopMeta();
 }
+/* ============================================================
+   LOOKAHEAD — labour required per working day over the next few weeks
+   Labour comes from each activity's labour list, counted on every working day from its
+   planned start to its forecast finish. Completed activities no longer need labour.
+   "On site" numbers are saved with the programme (state.labourOnSite) so shortfalls are flagged.
+   ============================================================ */
+let laWeeks = 4, laFromISO = null;
+function mondayOfISO(iso){ const d = toDate(iso); const dow = (d.getDay()+6)%7; return toISO(addDays(d,-dow)); }
+function renderLookahead(){
+  if(!state.labourOnSite) state.labourOnSite = {};
+  if(!laFromISO) laFromISO = mondayOfISO(toISO(new Date()));
+  const fromEl = document.getElementById("laFrom");
+  fromEl.value = laFromISO;
+  document.querySelectorAll("#laWeeksSeg button").forEach(b=>b.classList.toggle("active", Number(b.dataset.weeks)===laWeeks));
+
+  // working days in the window
+  const days = [];
+  let d = toDate(laFromISO);
+  const end = addDays(d, laWeeks*7-1);
+  while(d<=end){ if(isWorkingDay(d)) days.push(toISO(d)); d = addDays(d,1); }
+  const todayISO = toISO(new Date());
+
+  // activities that overlap the window and still need labour
+  const acts = state.activities.filter(a=>{
+    if(activityStage(a)==="complete") return false;
+    const s = a.plannedStart, f = activityForecastFinish(a);
+    return days.length && !(toDate(f) < toDate(days[0]) || toDate(s) > toDate(days[days.length-1]));
+  }).sort((a,b)=> toDate(a.plannedStart)-toDate(b.plannedStart));
+
+  // roles: active roles first, then any role used by an activity but since removed/hidden
+  const roleNames = activeLabourRoles().map(r=>r.name);
+  acts.forEach(a=>(a.labour||[]).forEach(l=>{ if(!roleNames.includes(l.roleName)) roleNames.push(l.roleName); }));
+
+  // required[role][day] and who's contributing
+  const req = {}, who = {};
+  roleNames.forEach(r=>{ req[r] = {}; who[r] = {}; days.forEach(dd=>{ req[r][dd]=0; who[r][dd]=[]; }); });
+  acts.forEach(a=>{
+    const s = toDate(a.plannedStart), f = toDate(activityForecastFinish(a));
+    days.forEach(dd=>{
+      const dt = toDate(dd);
+      if(dt<s || dt>f) return;
+      (a.labour||[]).forEach(l=>{ req[l.roleName][dd] += (Number(l.qty)||0); who[l.roleName][dd].push(a.name+" ("+l.qty+")"); });
+    });
+  });
+
+  // Once employees are set up on the Labour tab, "on site" comes from who's allocated to this job each week.
+  const plannerMode = ws.employees.length>0;
+  const onSite = (r, dd) => {
+    if(plannerMode) return allocatedCount(ws.currentJobId, mondayOfISO(dd||days[0]||laFromISO), r);
+    const v = state.labourOnSite[r]; return (v===undefined||v===null||v==="") ? null : Number(v);
+  };
+  const dayTotal = dd => roleNames.reduce((sum,r)=>sum+req[r][dd],0);
+  const availTotal = dd => roleNames.reduce((sum,r)=> sum + (onSite(r,dd)||0), 0);
+  const anyAvailSet = plannerMode || roleNames.some(r=>onSite(r)!==null);
+
+  // stats
+  let peak = 0, peakDay = null, totalMandays = 0, shortDays = 0;
+  days.forEach(dd=>{
+    const t = dayTotal(dd); totalMandays += t;
+    if(t>peak){ peak=t; peakDay=dd; }
+    if(roleNames.some(r=> onSite(r,dd)!==null && req[r][dd] > onSite(r,dd))) shortDays++;
+  });
+  const avg = days.length ? (totalMandays/days.length) : 0;
+  document.getElementById("laStats").innerHTML =
+    stat("Lookahead", fmtDateShort(days[0]||laFromISO)+" – "+fmtDateShort(days[days.length-1]||laFromISO), days.length+" working days") +
+    stat("Peak labour", peak+" operatives", peakDay? "on "+fmtDate(peakDay) : "No labour required") +
+    stat("Average per day", avg.toFixed(1), totalMandays+" man-days in total") +
+    '<div class="stat-card"><span class="stat-label">Days short of labour</span><span class="stat-value" style="color:'+(shortDays?"var(--amber)":"var(--green)")+';">'+(anyAvailSet? shortDays : "—")+'</span><span class="stat-sub">'+(anyAvailSet? (shortDays? "Some trades are short — see amber cells" : "Labour covers every day") : "Enter who's on site to check")+'</span></div>' +
+    stat("Activities", acts.length, "running in this period");
+
+  document.getElementById("laHint").innerHTML = plannerMode
+    ? "<b>On site</b> is who you've allocated to this job on the <b>Labour</b> tab, week by week — any day that needs more is flagged."
+    : "Enter how many of each trade you have on site in the <b>On site</b> column — any day that needs more is flagged. Or add your employees on the <b>Labour</b> tab to track it automatically.";
+  const noLabour = acts.filter(a=>!(a.labour||[]).length);
+  document.getElementById("laWarn").innerHTML = noLabour.length
+    ? '<div class="la-warn">'+noLabour.length+' activit'+(noLabour.length===1?"y has":"ies have")+' no labour assigned, so '+(noLabour.length===1?"it isn't":"they aren't")+' counted: '+esc(noLabour.slice(0,6).map(a=>a.name).join(", "))+(noLabour.length>6?"…":"")+'. Add labour from the activity\'s Edit box.</div>'
+    : '';
+
+  // grid
+  const weeks = []; days.forEach(dd=>{ const wk = mondayOfISO(dd); const last = weeks[weeks.length-1]; if(!last || last.wk!==wk) weeks.push({wk, n:1}); else last.n++; });
+  const isWeekEnd = i => i===days.length-1 || mondayOfISO(days[i])!==mondayOfISO(days[i+1]);
+  let html = '<table class="la-table"><thead>';
+  html += '<tr class="wk"><th class="sticky" rowspan="2">Trade</th><th class="sticky2" rowspan="2">On site'+(plannerMode?'<br><span class="la-onsite-note">from Labour tab</span>':'')+'</th>'+weeks.map(w=>'<th colspan="'+w.n+'">w/c '+fmtDateShort(w.wk)+'</th>').join('')+'</tr>';
+  html += '<tr>'+days.map((dd,i)=>{ const dt=toDate(dd); return '<th class="day-h'+(isWeekEnd(i)?" wk-end":"")+(dd===todayISO?" today":"")+'">'+["Su","Mo","Tu","We","Th","Fr","Sa"][dt.getDay()]+'<b>'+dt.getDate()+'</b></th>'; }).join('')+'</tr></thead><tbody>';
+  if(!roleNames.length){
+    html += '<tr><td class="sticky" colspan="'+(days.length+2)+'" style="color:var(--text-muted); font-weight:400;">No labour roles set up yet — add them in Settings.</td></tr>';
+  }
+  roleNames.forEach(r=>{
+    const av0 = onSite(r);
+    html += '<tr><td class="sticky">'+esc(r)+'</td><td class="sticky2">'+(plannerMode
+      ? (()=>{ const vals = [...new Set(days.map(dd=>mondayOfISO(dd)))].map(wk=>allocatedCount(ws.currentJobId, wk, r)); const lo=Math.min(...vals,av0), hi=Math.max(...vals,av0);
+          return '<b title="Allocated to this job on the Labour tab (changes week by week)">'+(lo===hi?lo:lo+'–'+hi)+'</b>'; })()
+      : '<input class="avail" type="number" min="0" step="1" data-avail="'+esc(r)+'" value="'+(av0===null?"":av0)+'" placeholder="—">')+'</td>';
+    days.forEach((dd,i)=>{
+      const n = req[r][dd];
+      const av = onSite(r, dd);
+      let cls = "req";
+      if(n===0) cls += " zero";
+      else if(av!==null) cls += n>av ? " short" : " ok";
+      const tip = n ? (fmtDate(dd)+" — "+r+": "+n+" needed"+(av!==null?" / "+av+" on site":"")+"\n"+who[r][dd].join("\n")) : "";
+      html += '<td class="'+cls+(isWeekEnd(i)?" wk-end":"")+'" title="'+esc(tip)+'">'+(n||"·")+'</td>';
+    });
+    html += '</tr>';
+  });
+  if(roleNames.length){
+    html += '<tr class="total"><td class="sticky">Total</td><td class="sticky2">'+(anyAvailSet?availTotal(days[0]):"—")+'</td>'+
+      days.map((dd,i)=>{ const t=dayTotal(dd); return '<td class="'+(anyAvailSet && t>availTotal(dd)?"short-total":"")+(isWeekEnd(i)?" wk-end":"")+'">'+(t||"·")+'</td>'; }).join('')+'</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById("laGrid").innerHTML = html;
+  // pin the "On site" column right beside the trade column when scrolling sideways
+  const firstCol = document.querySelector("#laGrid th.sticky");
+  if(firstCol){ const w = firstCol.getBoundingClientRect().width; document.querySelectorAll("#laGrid .sticky2").forEach(el=>{ el.style.left = w+"px"; }); }
+
+  // activities list
+  const wpName = id => { const w = state.workPackages.find(x=>x.id===id); return w? w.name : "—"; };
+  document.getElementById("laActs").innerHTML = acts.length
+    ? '<thead><tr><th>Activity</th><th>Work package</th><th>Start</th><th>Finish</th><th>Labour</th></tr></thead><tbody>'+
+      acts.map(a=>'<tr><td style="font-weight:600;">'+esc(a.name)+'</td><td>'+esc(wpName(a.workPackageId))+'</td><td>'+fmtDate(a.plannedStart)+'</td><td>'+fmtDate(activityForecastFinish(a))+(activityForecastFinish(a)!==a.plannedFinish?' <span style="color:var(--amber); font-size:11px; font-weight:700;">(forecast)</span>':'')+'</td><td>'+
+        ((a.labour||[]).length ? a.labour.map(l=>'<span class="la-chip">'+esc(l.roleName)+' × '+l.qty+'</span>').join('') : '<span style="color:var(--amber); font-weight:600;">None assigned</span>')+'</td></tr>').join('')+'</tbody>'
+    : '<tbody><tr><td style="color:var(--text-muted);">No activities in this period.</td></tr></tbody>';
+
+  document.querySelectorAll("#laGrid [data-avail]").forEach(el=>el.addEventListener("change", ()=>{
+    const v = el.value.trim();
+    if(v==="") delete state.labourOnSite[el.dataset.avail]; else state.labourOnSite[el.dataset.avail] = Math.max(0, Math.round(Number(v)||0));
+    saveState(); renderLookahead();
+  }));
+  renderTopMeta();
+}
+document.getElementById("laFrom").addEventListener("change", e=>{ if(e.target.value){ laFromISO = e.target.value; renderLookahead(); } });
+document.querySelectorAll("#laWeeksSeg button").forEach(b=>b.addEventListener("click", ()=>{ laWeeks = Number(b.dataset.weeks); renderLookahead(); }));
+
+/* ============================================================
+   JOBS — switch between each job's programme, add and remove jobs
+   ============================================================ */
+function switchJob(id, quiet){
+  if(id===ws.currentJobId){ closeModal(); return; }
+  saveState();
+  ws.currentJobId = id;
+  saveWorkspace();
+  loadState();
+  undoStack = []; redoStack = []; lastSnap = snapOf(state); updateUndoButtons(); // history belongs to the job it was made on
+  closeModal();
+  const active = document.querySelector(".view.active");
+  let name = active ? active.id.replace("view-","") : "programme";
+  if(name==="issue") name = "programme";
+  showView(name);
+  renderTopMeta();
+  if(!quiet) toast("Opened "+jobDisplayName(currentJob()));
+}
+function openJobsModal(){
+  const list = ws.jobs.map(j=>{
+    const cur = j.id===ws.currentJobId;
+    return '<div class="job-item'+(cur?" current":"")+'"><span class="job-dot" style="background:'+j.colour+';"></span>'+
+      '<span class="ji-name">'+esc(jobDisplayName(j))+'<span class="ji-sub">'+(j.jobNo?"Job no. "+esc(j.jobNo):"No job number")+(cur?" · open now":"")+'</span></span>'+
+      (cur?'':'<button class="btn btn-sm" data-open-job="'+j.id+'">Open</button>')+
+      (ws.jobs.length>1 && !cur?'<button class="icon-btn" data-del-job="'+j.id+'" title="Delete job">'+trashSvg()+'</button>':'')+
+    '</div>';
+  }).join('');
+  openModal("Jobs", '<div class="job-list">'+list+'</div><p style="font-size:12px; color:var(--text-muted); margin:10px 0 0;">Each job has its own programme. Employees and their weekly allocations are shared across all jobs.</p>', [
+    {label:"Close", cls:"btn", action:closeModal},
+    {label:"+ New job", cls:"btn btn-primary", action:openNewJobModal}
+  ]);
+  document.querySelectorAll("[data-open-job]").forEach(b=>b.addEventListener("click", ()=>switchJob(b.dataset.openJob)));
+  document.querySelectorAll("[data-del-job]").forEach(b=>b.addEventListener("click", ()=>{
+    const j = ws.jobs.find(x=>x.id===b.dataset.delJob);
+    openModal("Delete job?", '<p style="font-size:13px; color:var(--text-muted);">This permanently deletes the programme for <b>'+esc(jobDisplayName(j))+'</b>, its revisions, and everyone\'s allocations to it. This can\'t be undone.</p>', [
+      {label:"Cancel", cls:"btn", action:openJobsModal},
+      {label:"Delete job", cls:"btn btn-danger", action:()=>{
+        try{ localStorage.removeItem(jobKey(j.id)); }catch(e){}
+        ws.jobs = ws.jobs.filter(x=>x.id!==j.id);
+        Object.keys(ws.allocations).forEach(emp=>{ Object.keys(ws.allocations[emp]).forEach(wk=>{ if(ws.allocations[emp][wk]===j.id) delete ws.allocations[emp][wk]; }); });
+        saveWorkspace(); undoStack=[]; redoStack=[]; lastSnap=snapOf(state); updateUndoButtons();
+        renderTopMeta(); openJobsModal(); toast("Job deleted");
+        const active = document.querySelector(".view.active"); if(active && active.id==="view-labour") renderLabour();
+      }}
+    ]);
+  }));
+}
+function openNewJobModal(){
+  const body =
+    '<div class="field"><label for="njName">Job name</label><input id="njName" type="text" placeholder="e.g. Bramhall"></div>'+
+    '<div class="field"><label for="njNo">Job number</label><input id="njNo" type="text" placeholder="e.g. CG180"></div>'+
+    '<div class="field"><label for="njPC">Principal contractor</label><input id="njPC" type="text"></div>'+
+    '<div class="field"><label for="njStart">Programme start</label><input id="njStart" type="date" value="'+toISO(new Date())+'"></div>'+
+    '<p style="font-size:12px; color:var(--text-muted); margin:0;">Company details and labour trades are copied from the job you have open, so trades match up across jobs.</p>';
+  openModal("New job", body, [
+    {label:"Cancel", cls:"btn", action:openJobsModal},
+    {label:"Create job", cls:"btn btn-primary", action:()=>{
+      const name = document.getElementById("njName").value.trim();
+      if(!name){ toast("Enter a job name"); return; }
+      const st = defaultState();
+      st.project.name = name; st.project.jobNo = document.getElementById("njNo").value.trim();
+      st.project.principalContractor = document.getElementById("njPC").value.trim();
+      const start = document.getElementById("njStart").value || toISO(new Date());
+      st.project.programmeStart = start; st.project.plannedCompletion = start;
+      st.company = JSON.parse(JSON.stringify(state.company));
+      st.labourRoles = state.labourRoles.map(r=>({id:uid("role"), name:r.name, defaultQty:r.defaultQty, active:r.active}));
+      st.revNumberBase1 = true;
+      const id = uid("job");
+      try{ localStorage.setItem(jobKey(id), JSON.stringify(st)); }catch(e){}
+      ws.jobs.push({id, name, jobNo:st.project.jobNo, colour:JOB_COLOURS[ws.jobs.length % JOB_COLOURS.length]});
+      saveWorkspace();
+      switchJob(id, true);
+      toast("Job created — add its work packages and activities");
+    }}
+  ]);
+  setTimeout(()=>{ const el=document.getElementById("njName"); if(el) el.focus(); }, 30);
+}
+
+/* ============================================================
+   LABOUR PLANNER — employees, weekly allocation to jobs, short / heavy flags
+   Need per trade per week = the busiest working day that week in that job's programme
+   (same counting as the Dashboard lookahead). Allocated = people put on that job that week.
+   ============================================================ */
+let lbFromISO = null, lbWeeks = 6;
+function allTrades(){
+  const names = [];
+  ws.jobs.forEach(j=>{ const p = getJobProgramme(j.id); ((p&&p.labourRoles)||[]).forEach(r=>{ if(r.active!==false && !names.includes(r.name)) names.push(r.name); }); });
+  ws.employees.forEach(e=>{ if(e.trade && !names.includes(e.trade)) names.push(e.trade); });
+  return names;
+}
+function weekDays(wkISO){ const out=[]; for(let i=0;i<7;i++){ const d=addDays(toDate(wkISO),i); if(isWorkingDay(d)) out.push(toISO(d)); } return out; }
+/* {trade: peak daily need} for one programme in one week */
+function weeklyNeed(prog, wkISO){
+  const need = {};
+  if(!prog) return need;
+  const days = weekDays(wkISO);
+  days.forEach(dd=>{
+    const dt = toDate(dd), dayNeed = {};
+    (prog.activities||[]).forEach(a=>{
+      if(activityStage(a)==="complete") return;
+      if(dt < toDate(a.plannedStart) || dt > toDate(activityForecastFinish(a))) return;
+      (a.labour||[]).forEach(l=>{ dayNeed[l.roleName] = (dayNeed[l.roleName]||0) + (Number(l.qty)||0); });
+    });
+    Object.keys(dayNeed).forEach(t=>{ need[t] = Math.max(need[t]||0, dayNeed[t]); });
+  });
+  return need;
+}
+function allocOf(empId, wkISO){ return (ws.allocations[empId]||{})[wkISO] || ""; }
+function setAlloc(empId, wkISO, val){
+  ws.allocations[empId] = ws.allocations[empId] || {};
+  if(val) ws.allocations[empId][wkISO] = val; else delete ws.allocations[empId][wkISO];
+}
+function activeEmployees(){ return ws.employees.filter(e=>e.active!==false); }
+/* people of a trade allocated to a job in a week (used by the Dashboard lookahead too) */
+function allocatedCount(jobId, wkISO, trade){ return activeEmployees().filter(e=>e.trade===trade && allocOf(e.id,wkISO)===jobId).length; }
+
+function renderLabour(){
+  if(!lbFromISO) lbFromISO = mondayOfISO(toISO(new Date()));
+  document.querySelectorAll("#lbWeeksSeg button").forEach(b=>b.classList.toggle("active", Number(b.dataset.weeks)===lbWeeks));
+  const weeks = []; for(let i=0;i<lbWeeks;i++) weeks.push(toISO(addDays(toDate(lbFromISO), i*7)));
+  const trades = allTrades();
+  const emps = activeEmployees();
+  const progs = {}; ws.jobs.forEach(j=>{ progs[j.id] = getJobProgramme(j.id); });
+
+  // need / allocated / spare per job, week, trade
+  const need = {}, alloc = {}, spare = {}, off = {};
+  ws.jobs.forEach(j=>{ need[j.id] = {}; alloc[j.id] = {}; weeks.forEach(w=>{ need[j.id][w] = weeklyNeed(progs[j.id], w); alloc[j.id][w] = {}; }); });
+  weeks.forEach(w=>{ spare[w] = {}; off[w] = 0; });
+  emps.forEach(e=>{
+    weeks.forEach(w=>{
+      const a = allocOf(e.id, w);
+      if(a==="off") off[w]++;
+      else if(a && alloc[a]) alloc[a][w][e.trade] = (alloc[a][w][e.trade]||0)+1;
+      else spare[w][e.trade] = (spare[w][e.trade]||0)+1;
+    });
+  });
+
+  // stats for the first week shown
+  const w0 = weeks[0];
+  let shortJobs = 0, heavyJobs = 0, shortBy = 0;
+  ws.jobs.forEach(j=>{
+    let sh=false, hv=false;
+    trades.forEach(t=>{ const n=need[j.id][w0][t]||0, a=alloc[j.id][w0][t]||0; if(a<n){ sh=true; shortBy+=n-a; } if(a>n) hv=true; });
+    if(sh) shortJobs++; if(hv) heavyJobs++;
+  });
+  const spare0 = Object.values(spare[w0]).reduce((x,y)=>x+y,0);
+  document.getElementById("lbStats").innerHTML =
+    stat("Week commencing", fmtDate(w0), lbWeeks+" weeks shown") +
+    stat("Employees", emps.length, (emps.length-spare0-off[w0])+" allocated · "+off[w0]+" off") +
+    '<div class="stat-card"><span class="stat-label">Unallocated this week</span><span class="stat-value" style="color:'+(spare0?"var(--blue)":"var(--text)")+';">'+spare0+'</span><span class="stat-sub">'+(spare0?"Available to put on a job":"Everyone is placed")+'</span></div>'+
+    '<div class="stat-card"><span class="stat-label">Jobs short this week</span><span class="stat-value" style="color:'+(shortJobs?"var(--amber)":"var(--green)")+';">'+shortJobs+'</span><span class="stat-sub">'+(shortJobs? shortBy+" operative"+(shortBy===1?"":"s")+" short in total" : "All jobs covered")+'</span></div>'+
+    '<div class="stat-card"><span class="stat-label">Jobs heavy this week</span><span class="stat-value" style="color:'+(heavyJobs?"var(--blue)":"var(--text)")+';">'+heavyJobs+'</span><span class="stat-sub">More people than the programme needs</span></div>';
+
+  // ---- balance table ----
+  const wkHead = '<tr><th class="sticky">Job / trade</th>'+weeks.map(w=>'<th class="day-h">w/c<b>'+fmtDateShort(w)+'</b></th>').join('')+'</tr>';
+  let bal = '<table class="la-table lb-table"><thead>'+wkHead+'</thead><tbody>';
+  function cellFor(n, a){
+    if(!n && !a) return '<td class="cell none">·</td>';
+    const cls = a<n ? "short" : a>n ? "heavy" : "right";
+    const note = a<n ? (n-a)+" short" : a>n ? (a-n)+" heavy" : "right";
+    return '<td class="cell '+cls+'" title="'+a+' allocated / '+n+' needed">'+a+' / '+n+'<small>'+note+'</small></td>';
+  }
+  ws.jobs.forEach(j=>{
+    const jobTrades = trades.filter(t=> weeks.some(w=> (need[j.id][w][t]||0) || (alloc[j.id][w][t]||0)));
+    bal += '<tr class="job-row"><td class="sticky"><span class="job-dot" style="display:inline-block; vertical-align:middle; margin-right:7px; background:'+j.colour+';"></span>'+esc(jobDisplayName(j))+(j.id===ws.currentJobId?' <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(open)</span>':'')+'</td>'+
+      weeks.map(w=>{ const n=jobTrades.reduce((x,t)=>x+(need[j.id][w][t]||0),0), a=jobTrades.reduce((x,t)=>x+(alloc[j.id][w][t]||0),0); return cellFor(n,a); }).join('')+'</tr>';
+    if(!jobTrades.length) bal += '<tr class="trade-row"><td class="sticky" colspan="'+(weeks.length+1)+'">No labour needed or allocated in these weeks'+(progs[j.id] && !(progs[j.id].activities||[]).length ? " — programme has no activities yet":"")+'</td></tr>';
+    jobTrades.forEach(t=>{
+      bal += '<tr class="trade-row"><td class="sticky">'+esc(t)+'</td>'+weeks.map(w=>cellFor(need[j.id][w][t]||0, alloc[j.id][w][t]||0)).join('')+'</tr>';
+    });
+  });
+  const spareTrades = trades.filter(t=>weeks.some(w=>spare[w][t]));
+  if(spareTrades.length || weeks.some(w=>off[w])){
+    bal += '<tr class="job-row"><td class="sticky">Unallocated / off</td>'+weeks.map(w=>{ const n=Object.values(spare[w]).reduce((x,y)=>x+y,0); return '<td class="cell '+(n?"heavy":"none")+'">'+(n?n+' spare':'·')+(off[w]?'<small style="color:var(--text-muted);">'+off[w]+' off</small>':'')+'</td>'; }).join('')+'</tr>';
+    spareTrades.forEach(t=>{ bal += '<tr class="trade-row"><td class="sticky">'+esc(t)+'</td>'+weeks.map(w=>'<td class="cell '+(spare[w][t]?"heavy":"none")+'">'+(spare[w][t]||"·")+'</td>').join('')+'</tr>'; });
+  }
+  bal += '</tbody></table>';
+  document.getElementById("lbBalance").innerHTML = bal;
+
+  // ---- suggested moves: fill shortfalls from spare people first, then from heavy jobs ----
+  const moves = [];
+  weeks.forEach(w=>{
+    trades.forEach(t=>{
+      const shorts = ws.jobs.map(j=>({j, gap:(need[j.id][w][t]||0)-(alloc[j.id][w][t]||0)})).filter(x=>x.gap>0);
+      if(!shorts.length) return;
+      const spares = emps.filter(e=>e.trade===t && !allocOf(e.id,w));
+      const heavy = ws.jobs.map(j=>({j, extra:(alloc[j.id][w][t]||0)-(need[j.id][w][t]||0)})).filter(x=>x.extra>0);
+      const used = new Set();
+      shorts.forEach(sh=>{
+        for(let k=0;k<sh.gap;k++){
+          const sp = spares.find(e=>!used.has(e.id));
+          if(sp){ used.add(sp.id); moves.push({w, t, emp:sp, from:null, to:sh.j, gap:sh.gap}); continue; }
+          const hv = heavy.find(h=>h.extra>0);
+          if(!hv) break;
+          const cand = emps.find(e=>e.trade===t && allocOf(e.id,w)===hv.j.id && !used.has(e.id));
+          if(!cand) break;
+          used.add(cand.id); hv.extra--;
+          moves.push({w, t, emp:cand, from:hv.j, to:sh.j, gap:sh.gap, fromExtra:hv.extra+1});
+        }
+      });
+    });
+  });
+  const shortNoFix = [];
+  weeks.forEach(w=>trades.forEach(t=>ws.jobs.forEach(j=>{
+    const gap=(need[j.id][w][t]||0)-(alloc[j.id][w][t]||0);
+    const fixes = moves.filter(m=>m.w===w && m.t===t && m.to.id===j.id).length;
+    if(gap-fixes>0) shortNoFix.push({w,t,j,gap:gap-fixes});
+  })));
+  let mv = '';
+  if(!ws.employees.length){
+    mv = '<p class="lb-empty">Add your employees with <b>+ Employee</b>, then allocate them to jobs on the board below. Moves will be suggested here whenever a job is short.</p>';
+  } else if(!moves.length && !shortNoFix.length){
+    mv = '<p class="lb-empty">No job is short of labour in these weeks. 👍</p>';
+  } else {
+    mv = '<div class="move-list">'+moves.slice(0,15).map((m,i)=>'<div class="move-item"><span class="mv-text"><span class="mv-wk">w/c '+fmtDateShort(m.w)+'</span>'+
+      (m.from ? 'Move <b>'+esc(m.emp.name)+'</b> ('+esc(m.t)+') from '+esc(jobDisplayName(m.from))+' <span class="mv-heavy">('+m.fromExtra+' heavy)</span> to <b>'+esc(jobDisplayName(m.to))+'</b> <span class="mv-short">('+m.gap+' short)</span>'
+              : 'Put <b>'+esc(m.emp.name)+'</b> ('+esc(m.t)+', unallocated) on <b>'+esc(jobDisplayName(m.to))+'</b> <span class="mv-short">('+m.gap+' short)</span>')+
+      '</span><button class="btn btn-sm" data-mv="'+i+'" data-mode="week">This week</button><button class="btn btn-sm btn-primary" data-mv="'+i+'" data-mode="on">This week onward</button></div>').join('')+
+      (moves.length>15?'<p class="lb-empty">+ '+(moves.length-15)+' more — work through these first and the list will update.</p>':'')+
+      shortNoFix.slice(0,8).map(x=>'<div class="move-item"><span class="mv-text"><span class="mv-wk">w/c '+fmtDateShort(x.w)+'</span><b>'+esc(jobDisplayName(x.j))+'</b> is <span class="mv-short">'+x.gap+' '+esc(x.t)+' short</span> and there\'s nobody spare or heavy to move — you\'ll need to bring someone in or re-programme.</span></div>').join('')+
+      '</div>';
+  }
+  document.getElementById("lbMoves").innerHTML = mv;
+  document.querySelectorAll("#lbMoves [data-mv]").forEach(b=>b.addEventListener("click", ()=>{
+    const m = moves[Number(b.dataset.mv)];
+    const fromVal = m.from ? m.from.id : "";
+    setAlloc(m.emp.id, m.w, m.to.id);
+    if(b.dataset.mode==="on"){
+      // carry the move forward through the following weeks shown, wherever they were still on the same job (or unallocated)
+      // — but only for weeks where the job they're going to still needs that trade
+      weeks.filter(w=>toDate(w)>toDate(m.w)).forEach(w=>{
+        const stillShort = (need[m.to.id][w][m.t]||0) > (alloc[m.to.id][w][m.t]||0);
+        if(allocOf(m.emp.id,w)===fromVal && stillShort){
+          setAlloc(m.emp.id, w, m.to.id);
+          alloc[m.to.id][w][m.t] = (alloc[m.to.id][w][m.t]||0)+1;
+        }
+      });
+    }
+    saveState(); renderLabour();
+    toast(m.emp.name+" moved to "+jobDisplayName(m.to));
+  }));
+
+  // ---- allocation board, grouped by gang ----
+  const opts = sel => '<option value=""'+(sel===""?" selected":"")+'>— Unallocated</option>'+ws.jobs.map(j=>'<option value="'+j.id+'"'+(sel===j.id?" selected":"")+'>'+esc(jobDisplayName(j))+'</option>').join('')+'<option value="off"'+(sel==="off"?" selected":"")+'>Off / holiday</option>';
+  const colourOf = v => { const j = ws.jobs.find(x=>x.id===v); return j ? j.colour : v==="off" ? "#8B968E" : "var(--border)"; };
+  let board = '';
+  if(!ws.employees.length){
+    board = '<div style="padding:16px;"><p class="lb-empty" style="margin:0 0 10px;">No employees yet.</p><button class="btn btn-primary" id="lbAddEmp2">+ Add your first employee</button></div>';
+  } else {
+    const gangs = {};
+    ws.employees.slice().sort((a,b)=>(a.trade||"").localeCompare(b.trade||"") || a.name.localeCompare(b.name)).forEach(e=>{ const g=(e.gang||"").trim(); (gangs[g]=gangs[g]||[]).push(e); });
+    const gangNames = Object.keys(gangs).sort((a,b)=> a===""?1 : b===""?-1 : a.localeCompare(b));
+    board = '<table class="la-table lb-table"><thead><tr><th class="sticky">Employee</th>'+weeks.map(w=>'<th class="day-h">w/c<b>'+fmtDateShort(w)+'</b></th>').join('')+'</tr></thead><tbody>';
+    gangNames.forEach(g=>{
+      const members = gangs[g];
+      if(g){
+        board += '<tr class="gang-row"><td class="sticky">'+esc(g)+' <span style="font-weight:500; color:var(--text-muted); font-size:11.5px;">('+members.length+')</span></td>'+
+          weeks.map(w=>{ const vals = [...new Set(members.filter(e=>e.active!==false).map(e=>allocOf(e.id,w)))]; const same = vals.length===1 ? vals[0] : null;
+            return '<td class="selcell"><select class="lb-sel gang" data-gang="'+esc(g)+'" data-wk="'+w+'" style="border-left-color:'+(same!==null?colourOf(same):"var(--border)")+';" title="Move the whole gang">'+(same===null?'<option value="__mixed" selected>Mixed…</option>':'')+opts(same===null?"__none":same)+'</select></td>'; }).join('')+'</tr>';
+      } else if(gangNames.length>1){
+        board += '<tr class="gang-row"><td class="sticky" colspan="'+(weeks.length+1)+'">Not in a gang</td></tr>';
+      }
+      members.forEach(e=>{
+        board += '<tr'+(e.active===false?' style="opacity:.5;"':'')+'><td class="sticky"><button class="emp-name" data-edit-emp="'+e.id+'">'+esc(e.name)+'</button><span class="emp-trade">'+esc(e.trade||"No trade")+(e.active===false?" · inactive":"")+'</span></td>'+
+          weeks.map(w=>{ const v = allocOf(e.id,w); return '<td class="selcell"><select class="lb-sel'+(v?"":" unalloc")+'" data-emp="'+e.id+'" data-wk="'+w+'" style="border-left-color:'+colourOf(v)+';"'+(e.active===false?" disabled":"")+'>'+opts(v)+'</select></td>'; }).join('')+'</tr>';
+      });
+    });
+    board += '</tbody></table>';
+  }
+  document.getElementById("lbBoard").innerHTML = board;
+  document.querySelectorAll("#lbBoard select[data-emp]").forEach(el=>el.addEventListener("change", ()=>{ setAlloc(el.dataset.emp, el.dataset.wk, el.value); saveState(); renderLabour(); }));
+  document.querySelectorAll("#lbBoard select[data-gang]").forEach(el=>el.addEventListener("change", ()=>{
+    if(el.value==="__mixed") return;
+    ws.employees.filter(e=>(e.gang||"").trim()===el.dataset.gang && e.active!==false).forEach(e=>setAlloc(e.id, el.dataset.wk, el.value));
+    saveState(); renderLabour();
+    toast(el.dataset.gang+" moved for w/c "+fmtDateShort(el.dataset.wk));
+  }));
+  document.querySelectorAll("#lbBoard [data-edit-emp]").forEach(b=>b.addEventListener("click", ()=>openEmployeeModal(b.dataset.editEmp)));
+  const add2 = document.getElementById("lbAddEmp2"); if(add2) add2.addEventListener("click", ()=>openEmployeeModal());
+  const firstCol = document.querySelector("#lbBalance th.sticky"); // keep sticky widths tidy
+  renderTopMeta();
+}
+function openEmployeeModal(id){
+  const e = id ? ws.employees.find(x=>x.id===id) : null;
+  const trades = allTrades();
+  const gangs = [...new Set(ws.employees.map(x=>(x.gang||"").trim()).filter(Boolean))];
+  const body =
+    '<div class="field"><label for="empName">Name</label><input id="empName" type="text" value="'+(e?esc(e.name):"")+'" placeholder="e.g. Dave Smith"></div>'+
+    '<div class="field"><label for="empTrade">Trade</label><select id="empTrade">'+(trades.length?"":'<option value="">Add trades in Settings first</option>')+trades.map(t=>'<option'+(e&&e.trade===t?" selected":"")+'>'+esc(t)+'</option>').join('')+'</select></div>'+
+    '<div class="field"><label for="empGang">Gang (optional)</label><input id="empGang" type="text" list="gangList" value="'+(e?esc(e.gang||""):"")+'" placeholder="e.g. Gang 1 – Dave"><datalist id="gangList">'+gangs.map(g=>'<option value="'+esc(g)+'">').join('')+'</datalist></div>'+
+    '<div class="field"><label for="empPhone">Phone (optional)</label><input id="empPhone" type="text" value="'+(e?esc(e.phone||""):"")+'"></div>'+
+    (e?'<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600;"><input type="checkbox" id="empActive"'+(e.active!==false?" checked":"")+'> Currently employed (untick for leavers — keeps their history)</label>':'');
+  const actions = [];
+  if(e) actions.push({label:"Delete", cls:"btn btn-danger", action:()=>{
+    ws.employees = ws.employees.filter(x=>x.id!==e.id); delete ws.allocations[e.id];
+    saveState(); closeModal(); renderLabour(); toast("Employee removed");
+  }});
+  actions.push({label:"Cancel", cls:"btn", action:closeModal});
+  actions.push({label: e?"Save":"Add employee", cls:"btn btn-primary", action:()=>{
+    const name = document.getElementById("empName").value.trim();
+    if(!name){ toast("Enter a name"); return; }
+    const rec = e || {id:uid("emp"), active:true};
+    rec.name = name; rec.trade = document.getElementById("empTrade").value; rec.gang = document.getElementById("empGang").value.trim(); rec.phone = document.getElementById("empPhone").value.trim();
+    if(e) rec.active = document.getElementById("empActive").checked;
+    if(!e) ws.employees.push(rec);
+    saveState(); closeModal(); renderLabour(); toast(e?"Employee updated":"Employee added");
+  }});
+  openModal(e?"Edit employee":"Add employee", body, actions);
+  setTimeout(()=>{ const el=document.getElementById("empName"); if(el && !e) el.focus(); }, 30);
+}
+document.getElementById("lbAddEmp").addEventListener("click", ()=>openEmployeeModal());
+document.getElementById("lbPrev").addEventListener("click", ()=>{ lbFromISO = toISO(addDays(toDate(lbFromISO||mondayOfISO(toISO(new Date()))),-7)); renderLabour(); });
+document.getElementById("lbNext").addEventListener("click", ()=>{ lbFromISO = toISO(addDays(toDate(lbFromISO||mondayOfISO(toISO(new Date()))),7)); renderLabour(); });
+document.getElementById("lbToday").addEventListener("click", ()=>{ lbFromISO = mondayOfISO(toISO(new Date())); renderLabour(); });
+document.querySelectorAll("#lbWeeksSeg button").forEach(b=>b.addEventListener("click", ()=>{ lbWeeks = Number(b.dataset.weeks); renderLabour(); }));
+
 function stat(label,value,sub){ return '<div class="stat-card"><span class="stat-label">'+esc(label)+'</span><span class="stat-value">'+esc(value)+'</span>'+(sub?'<span class="stat-sub">'+esc(sub)+'</span>':'')+'</div>'; }
 function kv(k,v){ return '<div class="kv-row"><span>'+esc(k)+'</span><span>'+esc(v)+'</span></div>'; }
 
@@ -1790,6 +2501,33 @@ function renderIssuePreview(viewRev){
     bodyRows += '</div></div>';
   });
 
+  // Progress line (dropline) on the printed programme — same rules as the on-screen Gantt.
+  let docProgressLine = '';
+  if(state.dropline && state.dropline.date){
+    const dl = toDate(state.dropline.date);
+    const lastDay = dayCols[dayCols.length-1];
+    if(dl>=range.start && dl<=lastDay){
+      const dxFor = iso => dataW + Math.round((toDate(iso)-range.start)/DAY_MS)*dw;
+      const sx = dataW + (Math.round((dl-range.start)/DAY_MS)+1)*dw;
+      const px = a=>{
+        const pct = Math.max(0, Math.min(100, a.percentComplete||0));
+        if(activityStage(a)==="complete") return sx;
+        if(pct===0 && toDate(a.plannedStart)>dl) return sx;
+        const doneDays = pct/100*Math.max(1, activityDuration(a));
+        const whole = Math.floor(doneDays), frac = doneDays-whole;
+        let d = toDate(a.plannedStart);
+        while(!isWorkingDay(d)) d = addDays(d,1);
+        for(let n=0;n<whole;n++){ d = addDays(d,1); while(!isWorkingDay(d)) d = addDays(d,1); }
+        return dxFor(toISO(d)) + 1 + frac*dw;
+      };
+      const RH = 22, H = rows.length*RH;
+      const pts = [[sx,0]];
+      rows.forEach((r,idx)=>{ const x = r.type==="activity" ? px(r.item) : sx; pts.push([x, idx*RH+1],[x, idx*RH+RH-1]); });
+      pts.push([sx,H]);
+      docProgressLine = '<svg style="position:absolute; left:0; top:0; width:100%; height:'+H+'px; pointer-events:none; overflow:visible;">'+
+        '<polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+    }
+  }
   const totalActivities = state.activities.length;
   const varianceDays = projectVarianceDays();
   const varianceLabel = varianceDays===0?"On programme":(varianceDays<0? Math.abs(varianceDays)+" days ahead" : varianceDays+" days behind");
@@ -1805,11 +2543,12 @@ function renderIssuePreview(viewRev){
       docFact("Status date", state.dropline.date?fmtDate(state.dropline.date):"—")+docFact("Programme start", fmtDate(state.project.programmeStart))+docFact("Planned completion", fmtDate(state.project.plannedCompletion))+
     '</div>'+
     '<div class="doc-bar">PROGRAMME — '+String(totalActivities)+' ACTIVITIES · '+varianceLabel.toUpperCase()+'</div>'+
-    '<div class="doc-gantt-wrap" style="width:'+(dataW+totalDays*dw+2)+'px;">'+headHtml+bodyRows+'</div>'+
+    '<div class="doc-gantt-wrap" style="width:'+(dataW+totalDays*dw+2)+'px;">'+headHtml+'<div style="position:relative;">'+bodyRows+docProgressLine+'</div></div>'+
     '<div class="doc-legend">'+
       legendItem("#1F5A2D","Ahead of programme")+legendItem("#5B665E","On programme")+legendItem("#B4560F","Behind programme")+legendItem("#FFFFFF","Not started")+
       '<span><i style="background:#1A1A1A; height:6px; border-radius:3px;"></i>Work package summary</span>'+
       legendItem("#EEF0ED","Weekend")+legendItem("#F6E8D2","UK bank holiday")+
+      (state.dropline && state.dropline.date ? '<span><i style="background:#D0021B; height:2px; border-radius:0;"></i>Progress line at status date (left = behind, right = ahead)</span>' : '')+
     '</div>'+
     '<div class="doc-titleblock-grid">'+
       '<div class="ttb-col" style="flex:1.1;"><div class="ttb-sub"><b>Job No:</b>&nbsp;'+esc(state.project.jobNo||"—")+'</div><div class="ttb-sub ttb-sub-b"><b>Date:</b>&nbsp;'+revDate+'</div></div>'+
@@ -1842,8 +2581,9 @@ function renderIssuePreview(viewRev){
 }
 function docCell(key, value, depth, isName){
   const col = DOC_COLS.find(c=>c.key===key);
-  const indent = isName ? (depth*10) : 0;
-  return '<div style="width:'+col.w+'px; flex-shrink:0; height:100%; display:flex; align-items:center; justify-content:'+(isName?"flex-start":"center")+'; padding-left:'+(4+indent)+'px; font-size:9px; font-weight:'+(isName?"700":"400")+'; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-right:1px solid #CBD3CD; color:#1A1A1A;">'+esc(value)+'</div>';
+  const leftAlign = key==="name"; // work package and activity names sit on the left of the box
+  const indent = leftAlign ? (depth*10) : 0;
+  return '<div style="width:'+col.w+'px; flex-shrink:0; height:100%; display:flex; align-items:center; justify-content:'+(leftAlign?"flex-start":"center")+'; padding-left:'+(4+indent)+'px; font-size:9px; font-weight:'+(isName?"700":"400")+'; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-right:1px solid #CBD3CD; color:#1A1A1A;">'+esc(value)+'</div>';
 }
 function docFact(label,value){ return '<div class="doc-fact"><div class="doc-fact-label">'+esc(label)+'</div><div class="doc-fact-value">'+esc(value)+'</div></div>'; }
 function legendItem(color,label){ return '<span><i style="background:'+color+';"></i>'+esc(label)+'</span>'; }
