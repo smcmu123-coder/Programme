@@ -119,6 +119,14 @@
   .bar-handle-right{right:0;}
   body.gantt-dragging-move, body.gantt-dragging-move *{cursor:grabbing !important; user-select:none !important;}
   body.gantt-dragging-resize, body.gantt-dragging-resize *{cursor:ew-resize !important; user-select:none !important;}
+  .link-knob{position:absolute; width:12px; height:12px; border-radius:50%; background:#fff; border:2px solid #8B968E; z-index:5; cursor:crosshair; opacity:.45; transition:opacity .12s, transform .12s, border-color .12s; touch-action:none; box-sizing:border-box;}
+  .bar:hover + .link-knob, .link-knob:hover, .link-knob.active{opacity:1; border-color:#1F5A2D; transform:scale(1.25);}
+  .bar.link-target{outline:2px solid #1F5A2D; outline-offset:2px;}
+  .bar.link-invalid{outline:2px solid #C0392B; outline-offset:2px;}
+  body.gantt-linking, body.gantt-linking *{cursor:crosshair !important; user-select:none !important;}
+  .dep-hit{fill:none; stroke:transparent; stroke-width:9; pointer-events:stroke; cursor:pointer;}
+  .dep-hit:hover + .dep-line{stroke:#C0392B;}
+  @media print{ .link-knob{display:none !important;} }
   .drag-tooltip{position:fixed; z-index:9999; background:#1A1A1A; color:#fff; font-size:11px; font-weight:700; padding:4px 8px; border-radius:5px; pointer-events:none; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,.3);}
   .bar.status-ahead{background:var(--green);}
   .bar.status-on{background:var(--slate);}
@@ -129,7 +137,7 @@
   .bar.status-not-started .bar-txt{color:var(--text-muted);}
   .bar-slip{position:absolute; height:20px; border-radius:5px; background:repeating-linear-gradient(135deg, var(--amber-bg) 0 5px, var(--holiday-hatch) 5px 6px); border:1px dashed var(--amber); z-index:1; pointer-events:none;}
   .dropline{position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--amber); z-index:6; pointer-events:none;}
-  .dropline-label{position:absolute; top:-1px; transform:translateX(4px); background:var(--amber); color:#fff; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:7;}
+  .dropline-label{position:absolute; top:-1px; transform:translateX(4px); background:#D0021B; color:#fff; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:7;}
   .empty-state{margin:auto; text-align:center; max-width:340px; padding:40px 20px; display:flex; flex-direction:column; gap:14px; align-items:center;}
   .empty-state h3{font-size:16px;}
   .empty-state p{color:var(--text-muted); font-size:13px; margin:0;}
@@ -848,6 +856,7 @@ function renderProgramme(){
     if(stage!=="not-started" && pct>0 && pct<100) ganttBody += '<div class="bar-progress" style="width:'+pct+'%;"></div>';
     ganttBody += '<span class="bar-txt">'+esc(zoom==="week"?label:a.name)+'</span>';
     ganttBody += '</div>';
+    ganttBody += '<div class="link-knob" data-link-from="'+a.id+'" style="left:'+(left+2+width+3)+'px; top:'+(top+4)+'px;" title="Drag onto another activity to link it (starts after this one)"></div>';
     if(stage!=="complete"){
       const forecast = toDate(activityForecastFinish(a));
       const plannedFinish = toDate(a.plannedFinish);
@@ -869,7 +878,8 @@ function renderProgramme(){
       const x1=p.left+p.width, y1=p.top+10, x2=s.left, y2=s.top+10;
       const midX = x2>x1+10 ? x1+Math.max(8,(x2-x1)/2) : x1+8;
       const path = y1===y2 ? ('M'+x1+','+y1+' L'+x2+','+y2) : ('M'+x1+','+y1+' L'+midX+','+y1+' L'+midX+','+y2+' L'+x2+','+y2);
-      connectorPaths += '<path d="'+path+'" fill="none" stroke="#8B968E" stroke-width="1.4" marker-end="url(#depArrow)"/>';
+      connectorPaths += '<path class="dep-hit" d="'+path+'" data-unlink-from="'+pl.id+'" data-unlink-to="'+a.id+'"><title>Click to remove this link</title></path>'+
+        '<path class="dep-line" d="'+path+'" fill="none" stroke="#8B968E" stroke-width="1.4" marker-end="url(#depArrow)" style="pointer-events:none;"/>';
     });
   });
   if(connectorPaths){
@@ -879,12 +889,35 @@ function renderProgramme(){
     '</svg>';
   }
 
+  // Where an activity's progress sits along its bar: start + % complete of its working-day duration.
+  // Complete activities, and ones not due to start yet with no progress, sit on the status line.
+  function progressPointX(a, statusDate, statusX){
+    const pct = Math.max(0, Math.min(100, a.percentComplete||0));
+    if(activityStage(a)==="complete") return statusX;
+    if(pct===0 && toDate(a.plannedStart)>statusDate) return statusX;
+    const dur = Math.max(1, activityDuration(a));
+    const doneDays = pct/100*dur;
+    const whole = Math.floor(doneDays), frac = doneDays-whole;
+    let d = toDate(a.plannedStart);
+    if(!isWorkingDay(d)) d = toDate(nextWorkingDay(toISO(d)));
+    for(let n=0; n<whole; n++){ d = addDays(d,1); while(!isWorkingDay(d)) d = addDays(d,1); }
+    return xFor(toISO(d)) + 2 + Math.round(frac*dayWidth);
+  }
   if(state.dropline && state.dropline.date){
     const dl = toDate(state.dropline.date);
     if(dl>=range.start && dl<=range.end){
       const offsetDays = Math.round((dl-range.start)/DAY_MS);
       const left = offsetDays*dayWidth + dayWidth;
-      ganttBody += '<div class="dropline" style="left:'+left+'px; height:'+bodyHeight+'px;"></div>';
+      // Progress line: runs down from the status date and jogs out to each activity's
+      // progress point — left of the line = behind, right of the line = ahead.
+      const pts = [[left,0]];
+      rows.forEach((r,idx)=>{
+        const x = r.type==="activity" ? progressPointX(r.item, dl, left) : left;
+        pts.push([x, idx*38+2], [x, idx*38+36]);
+      });
+      pts.push([left, bodyHeight]);
+      ganttBody += '<svg class="dropline-svg" style="position:absolute; top:0; left:0; width:'+ganttWidth+'px; height:'+bodyHeight+'px; pointer-events:none; z-index:6; overflow:visible;">'+
+        '<polyline points="'+pts.map(p=>p[0]+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="2.2" stroke-linejoin="round"/></svg>';
       ganttBody += '<div class="dropline-label" style="left:'+left+'px;">'+esc(state.dropline.label||"STATUS DATE")+' — '+fmtDate(state.dropline.date).toUpperCase()+'</div>';
     }
   }
@@ -920,6 +953,7 @@ function renderProgramme(){
     openActivityModal(el.dataset.openActivity);
   }));
   setupGanttBarDrag(frame, range);
+  setupLinkDraw(frame);
 
   renderTopMeta();
 }
@@ -1016,6 +1050,127 @@ function setupGanttBarDrag(frame, range){
     el.addEventListener("mousedown", e=>{
       if(e.target.closest("[data-resize-left],[data-resize-right]")) return;
       startDrag(e, el.dataset.barId, "move");
+    });
+  });
+}
+/* ---- Draw a dependency link by dragging from a bar's end knob onto another bar ----
+   Creates a finish-to-start link using the same lag capture as the activity modal
+   (workingDayOffset from predecessor finish to successor start), so nothing moves when
+   the link is drawn — later changes to the predecessor then cascade as normal. */
+function setupLinkDraw(frame){
+  const body = frame.querySelector(".gantt-body");
+  if(!body) return;
+  let ls = null;
+
+  function localPoint(e){
+    const r = body.getBoundingClientRect();
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
+  }
+  function clearTarget(){
+    if(ls && ls.targetEl){ ls.targetEl.classList.remove("link-target","link-invalid"); ls.targetEl = null; }
+  }
+  function checkLink(fromId, toId){
+    if(fromId===toId) return "Can't link an activity to itself";
+    const to = state.activities.find(x=>x.id===toId);
+    if(!to) return "Activity not found";
+    if((to.predecessors||[]).some(p=>p.id===fromId)) return "Already linked";
+    if(getDescendants(toId).has(fromId)) return "That would create a loop";
+    return null;
+  }
+
+  frame.querySelectorAll("[data-link-from]").forEach(knob=>{
+    knob.addEventListener("pointerdown", e=>{
+      if(e.button!==0) return;
+      e.preventDefault(); e.stopPropagation();
+      const fromId = knob.dataset.linkFrom;
+      const kr = knob.getBoundingClientRect(), br = body.getBoundingClientRect();
+      const sx = kr.left+kr.width/2-br.left, sy = kr.top+kr.height/2-br.top;
+      const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+      svg.setAttribute("style","position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:6; overflow:visible;");
+      const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+      line.setAttribute("x1",sx); line.setAttribute("y1",sy); line.setAttribute("x2",sx); line.setAttribute("y2",sy);
+      line.setAttribute("stroke","#1F5A2D"); line.setAttribute("stroke-width","2"); line.setAttribute("stroke-dasharray","5 4");
+      svg.appendChild(line); body.appendChild(svg);
+      const tip = document.createElement("div"); tip.className = "drag-tooltip"; tip.textContent = "Drop on the activity that follows";
+      document.body.appendChild(tip);
+      knob.classList.add("active");
+      document.body.classList.add("gantt-linking");
+      ls = {fromId, knob, svg, line, tip, targetEl:null};
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+      document.addEventListener("pointercancel", onCancel);
+      onMove(e);
+    });
+  });
+
+  function onMove(e){
+    if(!ls) return;
+    const pt = localPoint(e);
+    ls.line.setAttribute("x2", pt.x); ls.line.setAttribute("y2", pt.y);
+    ls.tip.style.left = (e.clientX+14)+"px"; ls.tip.style.top = (e.clientY+14)+"px";
+    const hit = document.elementFromPoint(e.clientX, e.clientY);
+    const barEl = hit ? hit.closest(".bar[data-bar-id]") : null;
+    if(barEl !== ls.targetEl){
+      clearTarget();
+      if(barEl){
+        const err = checkLink(ls.fromId, barEl.dataset.barId);
+        barEl.classList.add(err ? "link-invalid" : "link-target");
+        ls.targetEl = barEl;
+        const to = state.activities.find(x=>x.id===barEl.dataset.barId);
+        ls.tip.textContent = err || ("Link to: "+(to?to.name:""));
+      } else {
+        ls.tip.textContent = "Drop on the activity that follows";
+      }
+    }
+  }
+  function finish(){
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onCancel);
+    document.body.classList.remove("gantt-linking");
+    if(!ls) return null;
+    const s = ls; clearTarget();
+    s.svg.remove(); s.tip.remove(); s.knob.classList.remove("active");
+    ls = null;
+    return s;
+  }
+  function onCancel(){ finish(); }
+  function onUp(e){
+    if(!ls) return;
+    const hit = document.elementFromPoint(e.clientX, e.clientY);
+    const barEl = hit ? hit.closest(".bar[data-bar-id]") : null;
+    const s = finish();
+    ganttDragJustHappened = true;
+    setTimeout(()=>{ ganttDragJustHappened = false; }, 200);
+    if(!barEl) return;
+    const toId = barEl.dataset.barId;
+    const err = checkLink(s.fromId, toId);
+    if(err){ toast(err); return; }
+    const from = state.activities.find(x=>x.id===s.fromId);
+    const to = state.activities.find(x=>x.id===toId);
+    if(!from || !to) return;
+    to.predecessors = to.predecessors || [];
+    to.predecessors.push({id:from.id, lag:workingDayOffset(from.plannedFinish, to.plannedStart)});
+    saveState(); renderProgramme();
+    toast('Linked: "'+to.name+'" now follows "'+from.name+'"');
+  }
+
+  frame.querySelectorAll("[data-unlink-from]").forEach(el=>{
+    el.addEventListener("click", e=>{
+      e.stopPropagation();
+      const from = state.activities.find(x=>x.id===el.dataset.unlinkFrom);
+      const to = state.activities.find(x=>x.id===el.dataset.unlinkTo);
+      if(!from || !to) return;
+      openModal("Remove link?",
+        '<p style="font-size:13px; color:var(--text-muted);">"'+esc(to.name)+'" will no longer follow "'+esc(from.name)+'". Dates stay where they are.</p>',
+        [
+          {label:"Cancel", cls:"btn", action:()=>closeModal()},
+          {label:"Remove link", cls:"btn btn-primary", action:()=>{
+            to.predecessors = (to.predecessors||[]).filter(p=>p.id!==from.id);
+            saveState(); closeModal(); renderProgramme();
+            toast("Link removed");
+          }}
+        ]);
     });
   });
 }
