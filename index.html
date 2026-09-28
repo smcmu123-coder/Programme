@@ -137,7 +137,11 @@
   .bar.status-not-started .bar-txt{color:var(--text-muted);}
   .bar-slip{position:absolute; height:20px; border-radius:5px; background:repeating-linear-gradient(135deg, var(--amber-bg) 0 5px, var(--holiday-hatch) 5px 6px); border:1px dashed var(--amber); z-index:1; pointer-events:none;}
   .dropline{position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--amber); z-index:6; pointer-events:none;}
-  .dropline-label{position:absolute; top:-1px; transform:translateX(4px); background:#D0021B; color:#fff; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:7;}
+  .dropline-label{position:absolute; top:-1px; transform:translateX(4px); background:#D0021B; color:#fff; font-size:9.5px; font-weight:700; padding:2px 4px 2px 6px; border-radius:4px; white-space:nowrap; z-index:7; display:flex; align-items:center; gap:5px;}
+  .dropline-label [data-dl-edit]{cursor:pointer;}
+  .dl-del{background:rgba(255,255,255,.2); border:0; color:#fff; font-size:12px; line-height:1; width:15px; height:15px; border-radius:3px; cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center;}
+  .dl-del:hover{background:rgba(255,255,255,.4);}
+  @media print{ .dl-del{display:none !important;} }
   .empty-state{margin:auto; text-align:center; max-width:340px; padding:40px 20px; display:flex; flex-direction:column; gap:14px; align-items:center;}
   .empty-state h3{font-size:16px;}
   .empty-state p{color:var(--text-muted); font-size:13px; margin:0;}
@@ -918,7 +922,7 @@ function renderProgramme(){
       pts.push([left, bodyHeight]);
       ganttBody += '<svg class="dropline-svg" style="position:absolute; top:0; left:0; width:'+ganttWidth+'px; height:'+bodyHeight+'px; pointer-events:none; z-index:6; overflow:visible;">'+
         '<polyline points="'+pts.map(p=>p[0]+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="2.2" stroke-linejoin="round"/></svg>';
-      ganttBody += '<div class="dropline-label" style="left:'+left+'px;">'+esc(state.dropline.label||"STATUS DATE")+' — '+fmtDate(state.dropline.date).toUpperCase()+'</div>';
+      ganttBody += '<div class="dropline-label" style="left:'+left+'px;"><span data-dl-edit title="Change status date">'+esc(state.dropline.label||"STATUS DATE")+' — '+fmtDate(state.dropline.date).toUpperCase()+'</span><button class="dl-del" data-dl-del title="Delete dropline">×</button></div>';
     }
   }
   ganttBody += '</div>';
@@ -954,6 +958,14 @@ function renderProgramme(){
   }));
   setupGanttBarDrag(frame, range);
   setupLinkDraw(frame);
+  frame.querySelectorAll("[data-dl-edit]").forEach(el=>el.addEventListener("click", openDroplineModal));
+  frame.querySelectorAll("[data-dl-del]").forEach(el=>el.addEventListener("click", e=>{
+    e.stopPropagation();
+    openModal("Delete dropline?", '<p style="font-size:13px; color:var(--text-muted);">Removes the progress line from the programme. You can add a new one at any time.</p>',
+      [{label:"Cancel", cls:"btn", action:closeModal},{label:"Delete", cls:"btn btn-danger", action:deleteDropline}]);
+  }));
+  const dropBtn = document.getElementById("dropBtn");
+  if(dropBtn) dropBtn.textContent = (state.dropline && state.dropline.date) ? "Update dropline" : "+ Dropline";
 
   renderTopMeta();
 }
@@ -1421,18 +1433,29 @@ function deleteActivity(id){
 /* ============================================================
    DROPLINE
    ============================================================ */
-document.getElementById("dropBtn").addEventListener("click", ()=>{
+function deleteDropline(){
+  state.dropline = {date:null, label:"STATUS DATE"};
+  saveState(); closeModal(); renderProgramme(); toast("Dropline deleted");
+}
+function openDroplineModal(){
+  const has = !!(state.dropline && state.dropline.date);
+  // New dropline defaults to today; saving replaces the existing one so the report is always current.
   const body =
-    '<div class="field"><label for="dlDate">Status date</label><input id="dlDate" type="date" value="'+(state.dropline.date||"")+'"></div>'+
-    '<div class="field"><label for="dlLabel">Label</label><input id="dlLabel" type="text" value="'+esc(state.dropline.label||"STATUS DATE")+'"></div>';
-  openModal("Weekly dropline", body, [
-    {label:"Remove", cls:"btn btn-danger", action:()=>{ state.dropline={date:null,label:""}; saveState(); closeModal(); renderProgramme(); toast("Dropline removed"); }},
-    {label:"Save", cls:"btn btn-primary", action:()=>{
-      state.dropline = {date:document.getElementById("dlDate").value, label:document.getElementById("dlLabel").value.trim()||"STATUS DATE"};
-      saveState(); closeModal(); renderProgramme(); toast("Dropline set");
-    }}
-  ]);
-});
+    (has? '<p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Current dropline: <b>'+fmtDate(state.dropline.date)+'</b>. Saving a new date replaces it.</p>' : '')+
+    '<div class="field"><label for="dlDate">Status date</label><input id="dlDate" type="date" value="'+toISO(new Date())+'"></div>'+
+    '<div class="field"><label for="dlLabel">Label</label><input id="dlLabel" type="text" value="'+esc((state.dropline&&state.dropline.label)||"STATUS DATE")+'"></div>';
+  const actions = [];
+  if(has) actions.push({label:"Delete dropline", cls:"btn btn-danger", action:deleteDropline});
+  actions.push({label:"Cancel", cls:"btn", action:closeModal});
+  actions.push({label: has? "Replace dropline" : "Add dropline", cls:"btn btn-primary", action:()=>{
+    const date = document.getElementById("dlDate").value;
+    if(!date){ toast("Pick a status date"); return; }
+    state.dropline = {date, label:document.getElementById("dlLabel").value.trim()||"STATUS DATE"};
+    saveState(); closeModal(); renderProgramme(); toast(has? "Dropline updated" : "Dropline added");
+  }});
+  openModal(has? "Update dropline" : "Add dropline", body, actions);
+}
+document.getElementById("dropBtn").addEventListener("click", openDroplineModal);
 document.getElementById("addWpBtn").addEventListener("click", ()=>openWpModal());
 document.getElementById("addActivityBtn").addEventListener("click", ()=>openActivityModal());
 
