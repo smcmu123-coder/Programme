@@ -112,7 +112,14 @@
   .gantt-cell.weekend{background:var(--weekend-bg);}
   .gantt-cell.holiday{background:repeating-linear-gradient(135deg, var(--holiday-bg) 0 6px, var(--holiday-hatch) 6px 7px);}
   .gantt-row-bg.wp-row{background:var(--surface-2);}
-  .bar{ position:absolute; height:20px; border-radius:5px; box-shadow:0 1px 2px rgba(0,0,0,.18); border:1px solid rgba(0,0,0,.08); z-index:3; cursor:pointer; display:flex; align-items:center; padding:0 7px; overflow:hidden; }
+  .bar{ position:absolute; height:20px; border-radius:5px; box-shadow:0 1px 2px rgba(0,0,0,.18); border:1px solid rgba(0,0,0,.08); z-index:3; cursor:grab; display:flex; align-items:center; padding:0 7px; overflow:hidden; }
+  .bar:active{cursor:grabbing;}
+  .bar-handle{position:absolute; top:0; bottom:0; width:7px; z-index:4; cursor:ew-resize;}
+  .bar-handle-left{left:0;}
+  .bar-handle-right{right:0;}
+  body.gantt-dragging-move, body.gantt-dragging-move *{cursor:grabbing !important; user-select:none !important;}
+  body.gantt-dragging-resize, body.gantt-dragging-resize *{cursor:ew-resize !important; user-select:none !important;}
+  .drag-tooltip{position:fixed; z-index:9999; background:#1A1A1A; color:#fff; font-size:11px; font-weight:700; padding:4px 8px; border-radius:5px; pointer-events:none; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,.3);}
   .bar.status-ahead{background:var(--green);}
   .bar.status-on{background:var(--slate);}
   .bar.status-behind{background:var(--amber);}
@@ -430,6 +437,7 @@ function addWorkingDays(startISO, n){
   return toISO(d);
 }
 function nextWorkingDay(iso){ let d=toDate(iso); while(!isWorkingDay(d)) d=addDays(d,1); return toISO(d); }
+function prevWorkingDay(iso){ let d=toDate(iso); while(!isWorkingDay(d)) d=addDays(d,-1); return toISO(d); }
 function shiftWorkingDays(iso, n){
   let d=toDate(iso);
   if(n===0) return iso;
@@ -834,7 +842,9 @@ function renderProgramme(){
     const tooltip = esc(a.name)+" — "+fmtDate(a.plannedStart)+" to "+fmtDate(a.plannedFinish)+" ("+dur+" working days) — "+activityStatusLabel(a);
     const visual = barVisual(a);
     const barStyle = "left:"+(left+2)+"px; top:"+top+"px; width:"+width+"px;"+(visual.bg?" background:"+visual.bg+"; opacity:"+visual.opacity+";":"");
-    ganttBody += '<div class="bar'+(visual.dashed?" status-not-started":"")+'" style="'+barStyle+'" data-open-activity="'+a.id+'" title="'+tooltip+'">';
+    ganttBody += '<div class="bar'+(visual.dashed?" status-not-started":"")+'" style="'+barStyle+'" data-open-activity="'+a.id+'" data-bar-id="'+a.id+'" title="'+tooltip+'">';
+    ganttBody += '<div class="bar-handle bar-handle-left" data-resize-left="'+a.id+'"></div>';
+    ganttBody += '<div class="bar-handle bar-handle-right" data-resize-right="'+a.id+'"></div>';
     if(stage!=="not-started" && pct>0 && pct<100) ganttBody += '<div class="bar-progress" style="width:'+pct+'%;"></div>';
     ganttBody += '<span class="bar-txt">'+esc(zoom==="week"?label:a.name)+'</span>';
     ganttBody += '</div>';
@@ -905,9 +915,153 @@ function renderProgramme(){
   frame.querySelectorAll("[data-progress-activity]").forEach(el=>el.addEventListener("click", ()=> openProgressModal(el.dataset.progressActivity)));
   frame.querySelectorAll("[data-edit-activity]").forEach(el=>el.addEventListener("click", ()=> openActivityModal(el.dataset.editActivity)));
   frame.querySelectorAll("[data-del-activity]").forEach(el=>el.addEventListener("click", ()=> deleteActivity(el.dataset.delActivity)));
-  frame.querySelectorAll("[data-open-activity]").forEach(el=>el.addEventListener("click", ()=> openActivityModal(el.dataset.openActivity)));
+  frame.querySelectorAll("[data-open-activity]").forEach(el=>el.addEventListener("click", ()=> {
+    if(ganttDragJustHappened){ ganttDragJustHappened = false; return; }
+    openActivityModal(el.dataset.openActivity);
+  }));
+  setupGanttBarDrag(frame, range);
 
   renderTopMeta();
+}
+let ganttDragJustHappened = false;
+/* ---- Drag-to-move / drag-to-resize activity bars on the interactive Gantt ----
+   Reuses the existing working-day calendar (isWorkingDay/nextWorkingDay/prevWorkingDay/
+   addWorkingDays/calculateWorkingDays) and the existing dependency cascade
+   (getDescendants/applyDependencyCascade) — no parallel date or dependency logic. */
+function setupGanttBarDrag(frame, range){
+  let dragState = null;
+
+  function barGeometry(startISO, finishISO){
+    const left = Math.round((toDate(startISO)-range.start)/DAY_MS)*dayWidth + 2;
+    const spanDays = Math.max(1, Math.round((toDate(finishISO)-toDate(startISO))/DAY_MS)+1);
+    const width = Math.max(dayWidth-4, spanDays*dayWidth-4);
+    return {left, width};
+  }
+
+  function startDrag(e, actId, mode){
+    if(e.button!==0) return;
+    const a = state.activities.find(x=>x.id===actId);
+    if(!a) return;
+    const barEl = frame.querySelector('.bar[data-bar-id="'+actId+'"]');
+    if(!barEl) return;
+    e.preventDefault();
+    dragState = {
+      actId, mode, startX:e.clientX, barEl,
+      origStart:a.plannedStart, origFinish:a.plannedFinish,
+      duration:activityDuration(a), moved:false,
+      newStart:a.plannedStart, newFinish:a.plannedFinish
+    };
+    document.addEventListener("mousemove", onDragMove);
+    document.addEventListener("mouseup", onDragEnd);
+  }
+
+  function onDragMove(e){
+    if(!dragState) return;
+    const deltaPx = e.clientX - dragState.startX;
+    if(!dragState.moved){
+      if(Math.abs(deltaPx) < 4) return;
+      dragState.moved = true;
+      document.body.classList.add(dragState.mode==="move" ? "gantt-dragging-move" : "gantt-dragging-resize");
+      dragState.tooltip = document.createElement("div");
+      dragState.tooltip.className = "drag-tooltip";
+      document.body.appendChild(dragState.tooltip);
+    }
+    const deltaDays = Math.round(deltaPx / dayWidth);
+    let newStart = dragState.origStart, newFinish = dragState.origFinish;
+    if(dragState.mode==="move"){
+      const candidate = toISO(addDays(toDate(dragState.origStart), deltaDays));
+      newStart = deltaDays>=0 ? nextWorkingDay(candidate) : prevWorkingDay(candidate);
+      newFinish = addWorkingDays(newStart, dragState.duration);
+    } else if(dragState.mode==="resize-left"){
+      const candidate = toISO(addDays(toDate(dragState.origStart), deltaDays));
+      let snapped = deltaDays>=0 ? nextWorkingDay(candidate) : prevWorkingDay(candidate);
+      if(toDate(snapped) > toDate(dragState.origFinish)) snapped = dragState.origFinish;
+      newStart = snapped; newFinish = dragState.origFinish;
+    } else if(dragState.mode==="resize-right"){
+      const candidate = toISO(addDays(toDate(dragState.origFinish), deltaDays));
+      let snapped = deltaDays>=0 ? nextWorkingDay(candidate) : prevWorkingDay(candidate);
+      if(toDate(snapped) < toDate(dragState.origStart)) snapped = dragState.origStart;
+      newStart = dragState.origStart; newFinish = snapped;
+    }
+    dragState.newStart = newStart; dragState.newFinish = newFinish;
+    const geo = barGeometry(newStart, newFinish);
+    dragState.barEl.style.left = geo.left+"px";
+    dragState.barEl.style.width = geo.width+"px";
+    dragState.tooltip.textContent = fmtDateShort(newStart)+" – "+fmtDateShort(newFinish)+" ("+calculateWorkingDays(newStart,newFinish)+"d)";
+    dragState.tooltip.style.left = (e.clientX+14)+"px";
+    dragState.tooltip.style.top = (e.clientY+14)+"px";
+  }
+
+  function onDragEnd(){
+    document.removeEventListener("mousemove", onDragMove);
+    document.removeEventListener("mouseup", onDragEnd);
+    if(!dragState) return;
+    const ds = dragState;
+    dragState = null;
+    document.body.classList.remove("gantt-dragging-move","gantt-dragging-resize");
+    if(ds.tooltip) ds.tooltip.remove();
+    if(!ds.moved) return; // a plain click — let the existing open-activity handler deal with it
+    ganttDragJustHappened = true;
+    setTimeout(()=>{ ganttDragJustHappened = false; }, 200); // safety net in case no click ever consumes it
+    commitActivityDrag(ds.actId, ds.newStart, ds.newFinish);
+  }
+
+  frame.querySelectorAll("[data-resize-left]").forEach(el=>{
+    el.addEventListener("mousedown", e=>{ e.stopPropagation(); startDrag(e, el.dataset.resizeLeft, "resize-left"); });
+  });
+  frame.querySelectorAll("[data-resize-right]").forEach(el=>{
+    el.addEventListener("mousedown", e=>{ e.stopPropagation(); startDrag(e, el.dataset.resizeRight, "resize-right"); });
+  });
+  frame.querySelectorAll(".bar[data-bar-id]").forEach(el=>{
+    el.addEventListener("mousedown", e=>{
+      if(e.target.closest("[data-resize-left],[data-resize-right]")) return;
+      startDrag(e, el.dataset.barId, "move");
+    });
+  });
+}
+/* Applies a drag/resize result to the real activity, then — only if linked activities are
+   actually affected — asks whether to move them too, reusing the existing cascade engine. */
+function commitActivityDrag(actId, newStart, newFinish){
+  const a = state.activities.find(x=>x.id===actId);
+  if(!a) return;
+  if(a.plannedStart===newStart && a.plannedFinish===newFinish) return;
+  const descendants = getDescendants(actId);
+  if(descendants.size===0){
+    a.plannedStart = newStart; a.plannedFinish = newFinish;
+    saveState(); renderProgramme();
+    return;
+  }
+  const before = {};
+  descendants.forEach(id=>{
+    const d = state.activities.find(x=>x.id===id);
+    if(d) before[id] = {start:d.plannedStart, finish:d.plannedFinish};
+  });
+  a.plannedStart = newStart; a.plannedFinish = newFinish;
+  applyDependencyCascade();
+  const changedIds = [...descendants].filter(id=>{
+    const d = state.activities.find(x=>x.id===id);
+    const b = before[id];
+    return d && b && (d.plannedStart!==b.start || d.plannedFinish!==b.finish);
+  });
+  if(changedIds.length===0){
+    saveState(); renderProgramme();
+    return;
+  }
+  saveState(); renderProgramme();
+  const names = changedIds.map(id=>{ const d=state.activities.find(x=>x.id===id); return d?d.name:null; }).filter(Boolean);
+  openModal("Move linked tasks?",
+    '<p style="font-size:13px; color:var(--text-muted);">Moving "'+esc(a.name)+'" affects '+changedIds.length+' linked activit'+(changedIds.length===1?"y":"ies")+': '+esc(names.join(", "))+'. Move '+(changedIds.length===1?"it":"them")+' to keep the existing relationship?</p>',
+    [
+      {label:"No, leave them", cls:"btn", action:()=>{
+        changedIds.forEach(id=>{
+          const d = state.activities.find(x=>x.id===id);
+          if(d){ d.plannedStart = before[id].start; d.plannedFinish = before[id].finish; }
+        });
+        saveState(); closeModal(); renderProgramme();
+      }},
+      {label:"Yes, move them", cls:"btn btn-primary", action:()=>{ closeModal(); }}
+    ]
+  );
 }
 
 function chevronSvg(){ return '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3l3 4 3-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
