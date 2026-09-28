@@ -1777,7 +1777,7 @@ function renderDashboard(){
   const doneCount = state.activities.filter(a=>activityStage(a)==="complete").length;
 
   document.getElementById("dashStats").innerHTML =
-    stat("Current revision","REV "+String(currentRevision().number).padStart(2,"0"), currentRevision().label) +
+    stat("Current revision","REV "+String(currentRevision().number).padStart(2,"0"), "issued "+fmtDate(currentRevision().date)) +
     stat("Status date", state.dropline.date?fmtDate(state.dropline.date):"Not set","") +
     stat("Planned completion", fmtDate(state.project.plannedCompletion),"") +
     stat("Forecast completion", fmtDate(forecastCompletionISO()), "") +
@@ -2341,7 +2341,6 @@ function openProgressModal(id){
 function renderRevisions(){
   const rows = [...state.revisions].reverse().map(r=>
     '<tr><td class="rev-badge">REV '+String(r.number).padStart(2,"0")+'</td>'+
-    '<td>'+esc(r.label)+'</td>'+
     '<td class="tnum">'+fmtDate(r.date)+'</td>'+
     '<td class="tnum">'+(r.statusDate?fmtDate(r.statusDate):"—")+'</td>'+
     '<td class="tnum">'+fmtDate(r.plannedCompletion)+'</td>'+
@@ -2353,7 +2352,7 @@ function renderRevisions(){
     '</td></tr>'
   ).join('');
   document.getElementById("revTable").innerHTML =
-    '<thead><tr><th>Revision</th><th>Description</th><th>Date</th><th>Status date</th><th>Planned completion</th><th>Forecast completion</th><th>Issued by</th><th>Document</th></tr></thead>'+
+    '<thead><tr><th>Revision</th><th>Date</th><th>Status date</th><th>Planned completion</th><th>Forecast completion</th><th>Issued by</th><th>Document</th></tr></thead>'+
     '<tbody>'+rows+'</tbody>';
   document.querySelectorAll("[data-view-rev]").forEach(el=>el.addEventListener("click", ()=> viewRevision(el.dataset.viewRev)));
   document.querySelectorAll("[data-del-rev]").forEach(el=>el.addEventListener("click", ()=> deleteRevision(el.dataset.delRev)));
@@ -2362,7 +2361,7 @@ function deleteRevision(id){
   if(state.revisions.length<=1){ toast("You need at least one revision — can't delete the last one"); return; }
   const rev = state.revisions.find(r=>r.id===id);
   if(!rev) return;
-  openModal("Delete Rev "+String(rev.number).padStart(2,"0")+"?", '<p style="font-size:13px; color:var(--text-muted);">This removes "'+esc(rev.label)+'" from the revision history and renumbers the remaining revisions in order. This can\'t be undone.</p>', [
+  openModal("Delete Rev "+String(rev.number).padStart(2,"0")+"?", '<p style="font-size:13px; color:var(--text-muted);">This removes Rev '+String(rev.number).padStart(2,"0")+' from the revision history and renumbers the remaining revisions in order. This can\'t be undone.</p>', [
     {label:"Cancel", cls:"btn", action:closeModal},
     {label:"Delete", cls:"btn btn-danger", action:()=>{
       state.revisions = state.revisions.filter(r=>r.id!==id);
@@ -2514,7 +2513,7 @@ function openProgressReportFlow(){
       '<ul>'+changes.slice(0,6).map(c=>'<li>'+esc(c)+'</li>').join('')+(changes.length>6?'<li>…and '+(changes.length-6)+' more</li>':'')+'</ul></div>';
   }
   const body =
-    '<p class="info-line">Progress Report '+pad2(nextNo)+' against <b>Rev '+pad2(rev.number)+'</b> ('+esc(rev.label)+', issued '+fmtDate(rev.date)+'). The revision stays as it is — only the progress and dropline update.</p>'+
+    '<p class="info-line">Progress Report '+pad2(nextNo)+' against <b>Rev '+pad2(rev.number)+'</b> (issued '+fmtDate(rev.date)+'). The revision stays as it is — only the progress and dropline update.</p>'+
     warn+
     '<div class="field-row">'+
       '<div class="field"><label for="prDate">Data date (dropline)</label><input id="prDate" type="date" value="'+defaultDate+'"></div>'+
@@ -2527,7 +2526,7 @@ function openProgressReportFlow(){
     if(!dataDate){ toast("Pick a data date"); return; }
     const snapshot = buildReportSnapshot();
     const report = {
-      id:uid("pr"), number:nextNo, revId:rev.id, revNumber:rev.number, revLabel:rev.label, revDate:rev.date,
+      id:uid("pr"), number:nextNo, revId:rev.id, revNumber:rev.number, revDate:rev.date,
       dataDate, date:toISO(new Date()), issuedBy:document.getElementById("prBy").value.trim(),
       snapshot, delays: computeDelays(snapshot, dataDate)
     };
