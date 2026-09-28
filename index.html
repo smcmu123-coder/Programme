@@ -399,7 +399,6 @@
         <button class="btn btn-primary" id="addWpBtn">+ Work package</button>
         <button class="btn" id="addActivityBtn">+ Activity</button>
         <button class="btn" id="dropBtn">+ Dropline</button>
-        <button class="btn" id="issueReportBtn" title="Print the current revision with an updated dropline — no new revision needed">Issue progress report</button>
         <div class="seg" id="zoomSeg" style="margin-left:auto;">
           <button data-zoom="week" class="active">Weeks</button>
           <button data-zoom="month">Months</button>
@@ -2632,7 +2631,6 @@ function renderProgressReports(){
   el.querySelectorAll("[data-view-pr]").forEach(b=>b.addEventListener("click", ()=>viewProgressReport(b.dataset.viewPr)));
   el.querySelectorAll("[data-del-pr]").forEach(b=>b.addEventListener("click", ()=>deleteProgressReport(b.dataset.delPr)));
 }
-document.getElementById("issueReportBtn").addEventListener("click", openProgressReportFlow);
 document.getElementById("issueReportBtn2").addEventListener("click", openProgressReportFlow);
 
 /* ============================================================
