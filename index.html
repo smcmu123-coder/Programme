@@ -766,7 +766,13 @@ lastSnap = snapOf(state);
 /* ============================================================
    DERIVED HELPERS
    ============================================================ */
-function activitiesInWp(wpId){ return state.activities.filter(a=>a.workPackageId===wpId).sort((a,b)=>a.order-b.order); }
+/* Activities in a work package always list in date order: earliest start first, then earliest finish. */
+function activitiesInWp(wpId){
+  return state.activities.filter(a=>a.workPackageId===wpId).sort((a,b)=>
+    (a.plannedStart||"").localeCompare(b.plannedStart||"") ||
+    (a.plannedFinish||"").localeCompare(b.plannedFinish||"") ||
+    (a.order||0)-(b.order||0));
+}
 function childWps(parentId){ return state.workPackages.filter(w=>w.parentId===parentId).sort((a,b)=>a.order-b.order); }
 /* ---- Activity dependency links (finish-to-start, with a lag that can be negative) ----
    activity.predecessors: array of {id, lag} — lag is the working-day offset between that
