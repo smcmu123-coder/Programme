@@ -2991,8 +2991,7 @@ function renderIssuePreview(viewRev){
     '<div class="doc-bar">'+esc(barText)+'</div>'+
     '<div class="doc-gantt-wrap" style="width:'+(dataW+totalDays*dw+2)+'px;">'+headHtml+'<div style="position:relative;">'+bodyRows+docProgressLine+'</div></div>'+
     '<div class="doc-legend">'+
-      legendItem("#1F5A2D","Ahead of programme")+legendItem("#5B665E","On programme")+legendItem("#B4560F","Behind programme")+legendItem("#FFFFFF","Not started")+
-      '<span><i style="background:#1A1A1A; height:6px; border-radius:3px;"></i>Work package summary</span>'+
+            '<span><i style="background:#1A1A1A; height:6px; border-radius:3px;"></i>Work package summary</span>'+
       legendItem("#EEF0ED","Weekend")+legendItem("#F6E8D2","UK bank holiday")+
       (state.dropline && state.dropline.date ? '<span><i style="background:#D0021B; height:2px; border-radius:0;"></i>Progress line at '+(report?'data':'status')+' date (left = behind, right = ahead)</span>' : '')+
       (report && report.delays.length ? '<span><i style="background:#D0021B; border-radius:50%;"></i>Delayed activity — see delay register</span>' : '')+
