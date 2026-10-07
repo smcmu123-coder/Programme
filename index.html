@@ -909,6 +909,11 @@ function forecastCompletionISO(){
 }
 function activeLabourRoles(){ return state.labourRoles.filter(r=>r.active); }
 function currentRevision(){ return state.revisions[state.revisions.length-1]; }
+/* A new programme starts with a Rev 01 placeholder that hasn't been issued yet (no snapshot).
+   The first issue fills that Rev 01 rather than jumping to Rev 02. */
+function rev01Pending(){ return state.revisions.length===1 && !state.revisions[0].snapshot; }
+function nextRevisionNumber(){ return rev01Pending() ? 1 : currentRevision().number+1; }
+function lastIssuedRevision(){ for(let i=state.revisions.length-1;i>=0;i--){ if(state.revisions[i].snapshot) return state.revisions[i]; } return null; }
 
 const BAR_PALETTE = ["#1F5A2D","#2E6DA4","#B4560F","#7A4FB5","#B23A2E","#0F7A6C","#8C6D1F","#5B665E"];
 function barVisual(a){
@@ -1811,7 +1816,7 @@ function renderDashboard(){
     kv("Labour roles in use", activeLabourRoles().length) +
     kv("Weekly dropline", state.dropline.date? fmtDate(state.dropline.date) : "Not set") +
     kv("Revisions issued", state.revisions.length) +
-    kv("Last issued", state.revisions.length>1? fmtDate(state.revisions[state.revisions.length-1].date) : "Not yet issued") +
+    kv("Last issued", lastIssuedRevision()? "Rev "+pad2(lastIssuedRevision().number)+" · "+fmtDate(lastIssuedRevision().date) : "Not yet issued") +
     kv("Progress reports issued", state.progressReports.length) +
     kv("Last progress report", state.progressReports.length? "PR "+pad2(state.progressReports[state.progressReports.length-1].number)+" · data date "+fmtDate(state.progressReports[state.progressReports.length-1].dataDate) : "None yet");
 
@@ -2488,7 +2493,7 @@ function renderRevisions(){
     '<td class="tnum">'+fmtDate(r.forecastCompletion)+'</td>'+
     '<td>'+esc(r.issuedBy)+'</td>'+
     '<td style="white-space:nowrap;">'+
-      (r.snapshot? '<button class="btn" data-view-rev="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button>' : '<span style="font-size:11px; color:var(--text-muted);">No snapshot</span>')+
+      (r.snapshot? '<button class="btn" data-view-rev="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button>' : '<span style="font-size:11px; color:var(--text-muted);">'+(rev01Pending()?'Not issued yet':'No snapshot')+'</span>')+
       ' <button class="icon-btn" data-del-rev="'+r.id+'" title="Delete revision">'+trashSvg()+'</button>'+
     '</td></tr>'
   ).join('');
@@ -2541,9 +2546,10 @@ document.getElementById("backFromIssue").addEventListener("click", ()=>showView(
 document.getElementById("printBtn").addEventListener("click", ()=> window.print());
 document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
   if(issueCtx && issueCtx.report && !issueCtx.saved){ saveProgressReport(issueCtx.report); return; }
-  const nextNum = currentRevision().number+1;
-  state.revisions.push({
-    id:uid("rev"), number:nextNum, label:"Revision "+String(nextNum).padStart(2,"0"),
+  const nextNum = nextRevisionNumber();
+  const firstIssue = rev01Pending();
+  const newRev = {
+    id: firstIssue ? state.revisions[0].id : uid("rev"), number:nextNum, label:"Revision "+String(nextNum).padStart(2,"0"),
     date: toISO(new Date()), statusDate: state.dropline.date,
     plannedCompletion: state.project.plannedCompletion, forecastCompletion: forecastCompletionISO(),
     issuedBy: state.project.projectManager,
@@ -2552,8 +2558,9 @@ document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
       activities: JSON.parse(JSON.stringify(state.activities)),
       project: JSON.parse(JSON.stringify(state.project))
     }
-  });
-  saveState();
+  };
+  if(firstIssue) state.revisions[0] = newRev; else state.revisions.push(newRev);
+  saveState(); renderTopMeta();
   toast("Revision "+String(nextNum).padStart(2,"0")+" issued");
   showView("revisions");
 });
@@ -2643,6 +2650,11 @@ function computeDelays(snapshot, dataISO){
 }
 
 function openProgressReportFlow(){
+  if(rev01Pending()){
+    openModal("Issue Rev 01 first", '<p class="info-line" style="margin:0;">Progress reports are issued against an issued revision. Rev 01 of this programme hasn\'t been issued yet — issue it first, then issue progress reports against it.</p>',
+      [{label:"Cancel", cls:"btn", action:closeModal},{label:"Issue Rev 01", cls:"btn btn-primary", action:()=>{ closeModal(); startRevisionIssue(); }}]);
+    return;
+  }
   const rev = currentRevision();
   const changes = programmeChangesSince(rev);
   const defaultDate = (state.dropline && state.dropline.date) || toISO(new Date());
@@ -2831,7 +2843,7 @@ function renderIssuePreview(viewRev){
     state.project = viewRev.snapshot.project;
     state.dropline = { date: viewRev.statusDate, label: state.dropline.label };
   }
-  const nextNum = report ? report.revNumber : (isHistorical ? viewRev.number : currentRevision().number+1);
+  const nextNum = report ? report.revNumber : (isHistorical ? viewRev.number : nextRevisionNumber());
   const delayIdx = {}; if(report) report.delays.forEach((d,i)=>{ delayIdx[d.actId] = i+1; });
   const range = projectRange();
   const rows = buildRowList();
