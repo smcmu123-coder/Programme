@@ -257,7 +257,9 @@
   .doc-fact-label{font-size:9.5px; font-weight:700; color:#1F5A2D; text-transform:uppercase; letter-spacing:.05em;}
   .doc-fact-value{font-size:12.5px; font-weight:600; color:#2E6DA4; margin-top:2px;}
   .doc-bar{background:#1F5A2D; color:#fff; font-weight:800; font-size:11px; letter-spacing:.04em; padding:7px 12px; border-radius:6px; margin:14px 0 8px;}
-  .doc-gantt-wrap{border:1px solid #CBD3CD; border-radius:4px; overflow:hidden;}
+  .doc-gantt-wrap{border:1px solid #CBD3CD; border-radius:4px; overflow:hidden; border-collapse:separate; border-spacing:0; table-layout:fixed;}
+  .doc-gantt-wrap thead{display:table-header-group;}
+  .doc-gantt-wrap tr{break-inside:avoid; page-break-inside:avoid;}
   .doc-footer{display:flex; justify-content:space-between; font-size:9.5px; color:#7A847C; margin-top:18px; padding-top:10px; border-top:1px solid #CBD3CD;}
   .doc-legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:10.5px; color:#5B665E;}
   .doc-legend span{display:flex; align-items:center; gap:5px;}
@@ -2877,8 +2879,9 @@ function renderIssuePreview(viewRev){
   '</div>';
 
   let bandIdx = 0;
-  let bodyRows='';
+  const rowParts=[]; // one printed row each; closed after the progress line is added
   rows.forEach((r,idx)=>{
+    let bodyRows='';
     const lineNo = idx+1;
     let rowBg = "#FFFFFF";
     let dataCells;
@@ -2895,7 +2898,7 @@ function renderIssuePreview(viewRev){
         docCell("finish", fmtDateShort(a.plannedFinish), r.depth);
     }
 
-    bodyRows += '<div style="display:flex; align-items:center; height:22px; border-bottom:1px solid #E3E7E1; background:'+rowBg+';">'+
+    bodyRows += '<div style="position:relative; display:flex; align-items:center; height:22px; border-bottom:1px solid #E3E7E1; background:'+rowBg+';">'+
       '<div style="display:flex; flex-shrink:0;">'+dataCells+'</div>'+
       '<div style="position:relative; display:flex;">';
     dayCols.forEach(dt=>{
@@ -2918,7 +2921,8 @@ function renderIssuePreview(viewRev){
       const style = "position:absolute; left:"+(off*dw+1)+"px; top:3px; width:"+(span*dw-2)+"px; height:16px; border-radius:3px; background:"+(visual.bg||"#FFFFFF")+"; opacity:"+visual.opacity+";"+(visual.dashed?" border:1.5px dashed #CBD3CD;":"");
       bodyRows += '<div style="'+style+'"></div>';
     }
-    bodyRows += '</div></div>';
+    bodyRows += '</div>';
+    rowParts.push(bodyRows);
   });
 
   // Progress line (dropline) on the printed programme — same rules as the on-screen Gantt.
@@ -2940,20 +2944,24 @@ function renderIssuePreview(viewRev){
         for(let n=0;n<whole;n++){ d = addDays(d,1); while(!isWorkingDay(d)) d = addDays(d,1); }
         return dxFor(toISO(d)) + 1 + frac*dw;
       };
-      const RH = 22, H = rows.length*RH;
-      const pts = [[sx,0]];
-      rows.forEach((r,idx)=>{ const x = r.type==="activity" ? px(r.item) : sx; pts.push([x, idx*RH+1],[x, idx*RH+RH-1]); });
-      pts.push([sx,H]);
-      let markers = '';
+      // Drawn row by row so the line carries on correctly when the programme runs onto another page.
+      const RH = 22;
+      let prevX = sx;
       rows.forEach((r,idx)=>{
-        if(r.type!=="activity" || !delayIdx[r.item.id]) return;
-        const x = px(r.item), y = idx*RH+RH/2;
-        markers += '<circle cx="'+x.toFixed(1)+'" cy="'+y+'" r="6.5" fill="#D0021B"/><text x="'+x.toFixed(1)+'" y="'+(y+2.8)+'" text-anchor="middle" font-size="7.5" font-weight="800" fill="#fff" font-family="inherit">'+delayIdx[r.item.id]+'</text>';
+        const x = r.type==="activity" ? px(r.item) : sx;
+        const pts = [[prevX,0],[x,1],[x,RH]];
+        if(idx===rows.length-1) pts.push([sx,RH+1]);
+        let marker = '';
+        if(r.type==="activity" && delayIdx[r.item.id]){
+          marker = '<circle cx="'+x.toFixed(1)+'" cy="'+(RH/2)+'" r="6.5" fill="#D0021B"/><text x="'+x.toFixed(1)+'" y="'+(RH/2+2.8)+'" text-anchor="middle" font-size="7.5" font-weight="800" fill="#fff" font-family="inherit">'+delayIdx[r.item.id]+'</text>';
+        }
+        rowParts[idx] += '<svg style="position:absolute; left:0; top:0; width:100%; height:'+RH+'px; pointer-events:none; overflow:visible; z-index:2;">'+
+          '<polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="1.8" stroke-linejoin="round"/>'+marker+'</svg>';
+        prevX = x;
       });
-      docProgressLine = '<svg style="position:absolute; left:0; top:0; width:100%; height:'+H+'px; pointer-events:none; overflow:visible;">'+
-        '<polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="1.8" stroke-linejoin="round"/>'+markers+'</svg>';
     }
   }
+  const bodyRows = rowParts.map(h=>'<tr><td style="padding:0;">'+h+'</div></td></tr>').join('');
   const totalActivities = state.activities.length;
   const varianceDays = projectVarianceDays();
   const varianceLabel = varianceDays===0?"On programme":(varianceDays<0? Math.abs(varianceDays)+" days ahead" : varianceDays+" days behind");
@@ -2968,7 +2976,7 @@ function renderIssuePreview(viewRev){
     : docFact("Status date", state.dropline.date?fmtDate(state.dropline.date):"—")+docFact("Programme start", fmtDate(state.project.programmeStart))+docFact("Planned completion", fmtDate(state.project.plannedCompletion));
   const barText = report
     ? 'PROGRESS REPORT '+prNo+' — REV '+pad2(nextNum)+' · DATA DATE '+fmtDate(report.dataDate).toUpperCase()+' · '+totalActivities+' ACTIVITIES · '+(report.delays.length? report.delays.length+' BEHIND' : 'NONE BEHIND')
-    : 'PROGRAMME — '+String(totalActivities)+' ACTIVITIES · '+varianceLabel.toUpperCase();
+    : 'PROGRAMME — '+String(totalActivities)+' ACTIVITIES';
   let delayRegister = '';
   if(report){
     delayRegister = '<div class="doc-delays"><div class="doc-bar" style="margin-top:0;">DELAY REGISTER — '+(report.delays.length? report.delays.length+' ACTIVIT'+(report.delays.length===1?'Y':'IES')+' BEHIND AT '+fmtDate(report.dataDate).toUpperCase() : 'NO ACTIVITIES BEHIND AT '+fmtDate(report.dataDate).toUpperCase())+'</div>'+
@@ -2989,7 +2997,7 @@ function renderIssuePreview(viewRev){
       factsHtml+
     '</div>'+
     '<div class="doc-bar">'+esc(barText)+'</div>'+
-    '<div class="doc-gantt-wrap" style="width:'+(dataW+totalDays*dw+2)+'px;">'+headHtml+'<div style="position:relative;">'+bodyRows+docProgressLine+'</div></div>'+
+    '<table class="doc-gantt-wrap" style="width:'+(dataW+totalDays*dw+2)+'px;"><thead><tr><td style="padding:0; border-bottom:1px solid #CBD3CD;">'+headHtml+'</td></tr></thead><tbody>'+bodyRows+'</tbody></table>'+
     '<div class="doc-legend">'+
             '<span><i style="background:#1A1A1A; height:6px; border-radius:3px;"></i>Work package summary</span>'+
       legendItem("#EEF0ED","Weekend")+legendItem("#F6E8D2","UK bank holiday")+
@@ -3058,15 +3066,15 @@ function padDocToPageBottom(dayCols, dw){
   const extraRows = Math.floor(gap / DOC_ROW_H);
   let fillerHtml = '';
   for(let i=0;i<extraRows;i++){
-    fillerHtml += '<div style="display:flex; align-items:center; height:'+DOC_ROW_H+'px; border-bottom:1px solid #E3E7E1; background:#FFFFFF;">'+
+    fillerHtml += '<tr><td style="padding:0;"><div style="display:flex; align-items:center; height:'+DOC_ROW_H+'px; border-bottom:1px solid #E3E7E1; background:#FFFFFF;">'+
       '<div style="display:flex; flex-shrink:0;">'+DOC_COLS.map(c=>'<div style="width:'+c.w+'px; flex-shrink:0; height:100%; border-right:1px solid #CBD3CD;"></div>').join('')+'</div>'+
       '<div style="position:relative; display:flex;">'+dayCols.map(dt=>{
         const we=dt.getDay()===0||dt.getDay()===6, bh=isBankHoliday(dt);
         return '<div style="width:'+dw+'px; height:'+DOC_ROW_H+'px; flex-shrink:0; border-right:1px solid #EEF0ED; background:'+(bh?"#F6E8D2":we?"#EEF0ED":"transparent")+';"></div>';
       }).join('')+'</div>'+
-    '</div>';
+    '</div></td></tr>';
   }
-  wrap.insertAdjacentHTML("beforeend", fillerHtml);
+  (wrap.querySelector("tbody")||wrap).insertAdjacentHTML("beforeend", fillerHtml);
 }
 
 /* ============================================================
