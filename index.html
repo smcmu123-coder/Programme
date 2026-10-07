@@ -271,6 +271,8 @@
   .ttb-sub-b{border-top:1.5px solid #1A1A1A;}
   .job-switch{display:inline-flex; align-items:center; gap:7px; border:1px solid transparent; background:transparent; color:var(--text); padding:3px 8px 3px 6px; border-radius:8px; margin-left:-6px;}
   .job-switch:hover{border-color:var(--border); background:var(--surface-2);}
+  .prog-name{font-size:13px; font-weight:600; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:26ch;}
+  .prog-switch{margin-left:0;}
   .job-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
   .job-count{font-size:10.5px; font-weight:700; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:100px; padding:1px 7px;}
   .job-list{display:flex; flex-direction:column; gap:6px; margin-bottom:6px;}
@@ -654,6 +656,15 @@ const WS_KEY = "vantry_workspace_v1";
 const JOB_COLOURS = ["#1F5A2D","#2E6DA4","#B4560F","#7A4FB5","#0F7A6C","#B23A2E","#8C6D1F","#5B665E"];
 let ws = null;
 function jobKey(id){ return id==="job_main" ? "vantry_programme_v5" : "vantry_programme_v5__"+id; }
+/* Programmes within a job. A job's first programme keeps the job's original storage key
+   (prog_main), so existing programmes stay exactly where they were. */
+function progKey(jobId, progId){ return (!progId || progId==="prog_main") ? jobKey(jobId) : jobKey(jobId)+"__"+progId; }
+function ensureProgrammes(j){
+  if(!Array.isArray(j.programmes) || !j.programmes.length) j.programmes = [{id:"prog_main", name:"Programme 1", status:"active"}];
+  if(!j.programmes.some(p=>p.id===j.currentProgrammeId)) j.currentProgrammeId = j.programmes[j.programmes.length-1].id;
+}
+function currentProgramme(){ const j=currentJob(); return j ? j.programmes.find(p=>p.id===j.currentProgrammeId) : null; }
+function curKey(){ return progKey(ws.currentJobId, currentJob().currentProgrammeId); }
 function loadWorkspace(){
   try{ const raw = localStorage.getItem(WS_KEY); if(raw) ws = JSON.parse(raw); }catch(e){}
   if(!ws || !Array.isArray(ws.jobs) || !ws.jobs.length){
@@ -661,6 +672,7 @@ function loadWorkspace(){
   }
   ws.employees = ws.employees || []; ws.allocations = ws.allocations || {};
   if(!ws.jobs.some(j=>j.id===ws.currentJobId)) ws.currentJobId = ws.jobs[0].id;
+  ws.jobs.forEach(ensureProgrammes);
 }
 function saveWorkspace(){ try{ localStorage.setItem(WS_KEY, JSON.stringify(ws)); }catch(e){} }
 function currentJob(){ return ws.jobs.find(j=>j.id===ws.currentJobId); }
@@ -668,13 +680,14 @@ function jobDisplayName(j){ return (j && j.name) ? j.name : "Untitled job"; }
 /* Read any job's programme — the live one for the open job, otherwise straight from storage. */
 function getJobProgramme(id){
   if(id===ws.currentJobId) return state;
-  try{ const raw = localStorage.getItem(jobKey(id)); if(raw) return JSON.parse(raw); }catch(e){}
+  const j = ws.jobs.find(x=>x.id===id);
+  try{ const raw = localStorage.getItem(progKey(id, j && j.currentProgrammeId)); if(raw) return JSON.parse(raw); }catch(e){}
   return null;
 }
 function loadState(){
   if(!ws) loadWorkspace();
   try{
-    const raw = localStorage.getItem(jobKey(ws.currentJobId));
+    const raw = localStorage.getItem(curKey());
     if(raw){ state = JSON.parse(raw); normalizeState(); syncJobName(); return; }
   }catch(e){}
   state = defaultState();
@@ -710,7 +723,7 @@ const HISTORY_LIMIT = 100;
 let undoStack = [], redoStack = [], lastSnap = null, saveBatchOpen = false, mergeNextSave = false;
 function snapOf(st){ return JSON.stringify({s:st, w:{employees:ws.employees, allocations:ws.allocations}}, (k,v)=> k==="expanded" ? undefined : v); }
 function saveState(){
-  try{ localStorage.setItem(jobKey(ws.currentJobId), JSON.stringify(state)); }catch(e){}
+  try{ localStorage.setItem(curKey(), JSON.stringify(state)); }catch(e){}
   syncJobName(); saveWorkspace();
   const snap = snapOf(state);
   if(lastSnap===null){ lastSnap = snap; return; }
@@ -733,7 +746,7 @@ function restoreSnap(snap){
   ws.employees = parsed.w.employees; ws.allocations = parsed.w.allocations;
   (state.workPackages||[]).forEach(w=>{ w.expanded = expanded[w.id]!==undefined ? expanded[w.id] : true; });
   lastSnap = snap;
-  try{ localStorage.setItem(jobKey(ws.currentJobId), JSON.stringify(state)); }catch(e){}
+  try{ localStorage.setItem(curKey(), JSON.stringify(state)); }catch(e){}
   syncJobName(); saveWorkspace();
   if(document.getElementById("modalBackdrop").classList.contains("open")) closeModal();
   const active = document.querySelector(".view.active");
@@ -991,9 +1004,11 @@ function renderTopMeta(){
   const rev = currentRevision();
   document.getElementById("projMeta").innerHTML =
     '<button class="job-switch" id="jobSwitch" title="Switch job"><span class="job-dot" style="background:'+((currentJob()&&currentJob().colour)||"#1F5A2D")+';"></span><span class="proj-name">'+esc(state.project.name||"Untitled job")+'</span>'+(ws.jobs.length>1?'<span class="job-count">'+ws.jobs.length+' jobs</span>':'')+'<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
+    '<button class="job-switch prog-switch" id="progSwitch" title="Switch or start a programme on this job"><span class="prog-name">'+esc((currentProgramme()&&currentProgramme().name)||"Programme")+'</span>'+((currentProgramme()&&currentProgramme().status==="complete")?'<span class="job-count">Complete</span>':'')+(currentJob().programmes.length>1?'<span class="job-count">'+currentJob().programmes.length+' programmes</span>':'')+'<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
     '<span class="rev-chip">REV '+String(rev.number).padStart(2,"0")+'</span>'+
     '<span class="status-chip">'+(state.dropline.date? "Status date "+fmtDate(state.dropline.date) : "No status date set")+'</span>';
   document.getElementById("jobSwitch").addEventListener("click", openJobsModal);
+  document.getElementById("progSwitch").addEventListener("click", openProgrammesModal);
 }
 function toast(msg){
   const t=document.getElementById("toast");
@@ -1980,7 +1995,7 @@ function openJobsModal(){
     openModal("Delete job?", '<p style="font-size:13px; color:var(--text-muted);">This permanently deletes the programme for <b>'+esc(jobDisplayName(j))+'</b>, its revisions, and everyone\'s allocations to it. This can\'t be undone.</p>', [
       {label:"Cancel", cls:"btn", action:openJobsModal},
       {label:"Delete job", cls:"btn btn-danger", action:()=>{
-        try{ localStorage.removeItem(jobKey(j.id)); }catch(e){}
+        (j.programmes||[{id:"prog_main"}]).forEach(pr=>{ try{ localStorage.removeItem(progKey(j.id, pr.id)); }catch(e){} });
         ws.jobs = ws.jobs.filter(x=>x.id!==j.id);
         Object.keys(ws.allocations).forEach(emp=>{ Object.keys(ws.allocations[emp]).forEach(wk=>{ if(ws.allocations[emp][wk]===j.id) delete ws.allocations[emp][wk]; }); });
         saveWorkspace(); undoStack=[]; redoStack=[]; lastSnap=snapOf(state); updateUndoButtons();
@@ -1995,7 +2010,8 @@ function openNewJobModal(){
     '<div class="field"><label for="njName">Job name</label><input id="njName" type="text" placeholder="e.g. Bramhall"></div>'+
     '<div class="field"><label for="njNo">Job number</label><input id="njNo" type="text" placeholder="e.g. CG180"></div>'+
     '<div class="field"><label for="njPC">Principal contractor</label><input id="njPC" type="text"></div>'+
-    '<div class="field"><label for="njStart">Programme start</label><input id="njStart" type="date" value="'+toISO(new Date())+'"></div>'+
+    '<div class="field-row"><div class="field"><label for="njProg">Programme name</label><input id="njProg" type="text" value="Programme 1"></div>'+
+    '<div class="field"><label for="njStart">Programme start</label><input id="njStart" type="date" value="'+toISO(new Date())+'"></div></div>'+
     '<p style="font-size:12px; color:var(--text-muted); margin:0;">Company details and labour trades are copied from the job you have open, so trades match up across jobs.</p>';
   openModal("New job", body, [
     {label:"Cancel", cls:"btn", action:openJobsModal},
@@ -2012,13 +2028,132 @@ function openNewJobModal(){
       st.revNumberBase1 = true;
       const id = uid("job");
       try{ localStorage.setItem(jobKey(id), JSON.stringify(st)); }catch(e){}
-      ws.jobs.push({id, name, jobNo:st.project.jobNo, colour:JOB_COLOURS[ws.jobs.length % JOB_COLOURS.length]});
+      ws.jobs.push({id, name, jobNo:st.project.jobNo, colour:JOB_COLOURS[ws.jobs.length % JOB_COLOURS.length],
+        programmes:[{id:"prog_main", name:(document.getElementById("njProg").value.trim()||"Programme 1"), status:"active", created:toISO(new Date())}], currentProgrammeId:"prog_main"});
       saveWorkspace();
       switchJob(id, true);
       toast("Job created — add its work packages and activities");
     }}
   ]);
   setTimeout(()=>{ const el=document.getElementById("njName"); if(el) el.focus(); }, 30);
+}
+
+/* ============================================================
+   PROGRAMMES — several programmes on one job (e.g. a new short term
+   programme once the last one is complete). Each has its own activities,
+   revisions (from Rev 01), droplines and progress reports.
+   ============================================================ */
+function readProgramme(jobId, progId){
+  const j = ws.jobs.find(x=>x.id===jobId);
+  if(jobId===ws.currentJobId && j && j.currentProgrammeId===progId) return state;
+  try{ const raw = localStorage.getItem(progKey(jobId, progId)); if(raw) return JSON.parse(raw); }catch(e){}
+  return null;
+}
+function switchProgramme(progId, quiet){
+  const j = currentJob();
+  if(progId===j.currentProgrammeId){ closeModal(); return; }
+  saveState();
+  j.currentProgrammeId = progId;
+  saveWorkspace();
+  loadState();
+  undoStack = []; redoStack = []; lastSnap = snapOf(state); updateUndoButtons();
+  closeModal();
+  const active = document.querySelector(".view.active");
+  let name = active ? active.id.replace("view-","") : "programme";
+  if(name==="issue") name = "programme";
+  showView(name); renderTopMeta();
+  if(!quiet) toast("Opened "+currentProgramme().name);
+}
+function openProgrammesModal(){
+  const j = currentJob();
+  const list = j.programmes.map(pr=>{
+    const cur = pr.id===j.currentProgrammeId;
+    const st = readProgramme(j.id, pr.id);
+    const revN = st && st.revisions && st.revisions.length ? st.revisions[st.revisions.length-1].number : 1;
+    const acts = st && st.activities ? st.activities.length : 0;
+    const dates = st && st.project ? fmtDate(st.project.programmeStart)+' – '+fmtDate(st.project.plannedCompletion) : '';
+    return '<div class="job-item'+(cur?" current":"")+'">'+
+      '<span class="ji-name">'+esc(pr.name)+(pr.status==="complete"?' <span class="job-count">Complete</span>':'')+
+        '<span class="ji-sub">Rev '+pad2(revN)+' · '+acts+' activit'+(acts===1?'y':'ies')+(dates?' · '+dates:'')+(cur?' · open now':'')+'</span></span>'+
+      (cur?'':'<button class="btn btn-sm" data-open-prog="'+pr.id+'">Open</button>')+
+      '<button class="icon-btn" data-edit-prog="'+pr.id+'" title="Rename / mark complete">'+editSvg()+'</button>'+
+      (j.programmes.length>1 && !cur?'<button class="icon-btn" data-del-prog="'+pr.id+'" title="Delete programme">'+trashSvg()+'</button>':'')+
+    '</div>';
+  }).join('');
+  openModal("Programmes — "+jobDisplayName(j), '<div class="job-list">'+list+'</div><p style="font-size:12px; color:var(--text-muted); margin:10px 0 0;">Each programme has its own activities, revisions (starting at Rev 01), droplines and progress reports. The Labour tab uses whichever programme is open on each job.</p>', [
+    {label:"Close", cls:"btn", action:closeModal},
+    {label:"+ New programme", cls:"btn btn-primary", action:openNewProgrammeModal}
+  ]);
+  document.querySelectorAll("[data-open-prog]").forEach(b=>b.addEventListener("click", ()=>switchProgramme(b.dataset.openProg)));
+  document.querySelectorAll("[data-edit-prog]").forEach(b=>b.addEventListener("click", ()=>openEditProgrammeModal(b.dataset.editProg)));
+  document.querySelectorAll("[data-del-prog]").forEach(b=>b.addEventListener("click", ()=>{
+    const pr = j.programmes.find(x=>x.id===b.dataset.delProg);
+    openModal("Delete programme?", '<p style="font-size:13px; color:var(--text-muted);">This permanently deletes <b>'+esc(pr.name)+'</b> on '+esc(jobDisplayName(j))+', with its revisions and progress reports. This can\'t be undone.</p>', [
+      {label:"Cancel", cls:"btn", action:openProgrammesModal},
+      {label:"Delete programme", cls:"btn btn-danger", action:()=>{
+        try{ localStorage.removeItem(progKey(j.id, pr.id)); }catch(e){}
+        j.programmes = j.programmes.filter(x=>x.id!==pr.id);
+        saveWorkspace(); renderTopMeta(); openProgrammesModal(); toast("Programme deleted");
+      }}
+    ]);
+  }));
+}
+function openEditProgrammeModal(progId){
+  const j = currentJob(), pr = j.programmes.find(x=>x.id===progId);
+  if(!pr) return;
+  const body = '<div class="field"><label for="epName">Programme name</label><input id="epName" type="text" value="'+esc(pr.name)+'"></div>'+
+    '<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600;"><input type="checkbox" id="epDone"'+(pr.status==="complete"?" checked":"")+'> Programme complete</label>';
+  openModal("Edit programme", body, [
+    {label:"Cancel", cls:"btn", action:openProgrammesModal},
+    {label:"Save", cls:"btn btn-primary", action:()=>{
+      const n = document.getElementById("epName").value.trim();
+      if(!n){ toast("Enter a programme name"); return; }
+      pr.name = n; pr.status = document.getElementById("epDone").checked ? "complete" : "active";
+      saveWorkspace(); renderTopMeta(); openProgrammesModal();
+    }}
+  ]);
+}
+function openNewProgrammeModal(){
+  const j = currentJob(), cur = currentProgramme();
+  const n = j.programmes.length+1;
+  const body =
+    '<div class="field"><label for="npName">Programme name</label><input id="npName" type="text" value="Programme '+n+'" placeholder="e.g. Phase 2 – Plots 11-24"></div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label for="npStart">Programme start</label><input id="npStart" type="date" value="'+toISO(new Date())+'"></div>'+
+      '<div class="field"><label for="npFinish">Planned completion</label><input id="npFinish" type="date" value="'+toISO(new Date())+'"></div>'+
+    '</div>'+
+    '<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600; margin-bottom:8px;"><input type="checkbox" id="npWps" checked> Copy the work packages from '+esc(cur.name)+' (no activities)</label>'+
+    '<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600;"><input type="checkbox" id="npDone"'+(cur.status==="complete"?" checked disabled":" checked")+'> Mark '+esc(cur.name)+' as complete</label>'+
+    '<p style="font-size:12px; color:var(--text-muted); margin:12px 0 0;">The new programme starts at Rev 01. Job details, company details and labour trades are carried over. '+esc(cur.name)+' is kept, with its revisions and progress reports, and can be reopened from the programme list.</p>';
+  openModal("New programme on "+jobDisplayName(j), body, [
+    {label:"Cancel", cls:"btn", action:openProgrammesModal},
+    {label:"Create programme", cls:"btn btn-primary", action:()=>{
+      const name = document.getElementById("npName").value.trim();
+      if(!name){ toast("Enter a programme name"); return; }
+      const start = document.getElementById("npStart").value || toISO(new Date());
+      let finish = document.getElementById("npFinish").value || start;
+      if(toDate(finish)<toDate(start)) finish = start;
+      const st = defaultState();
+      st.project = Object.assign(clone(state.project), {programmeStart:start, plannedCompletion:finish});
+      st.company = clone(state.company);
+      st.labourRoles = clone(state.labourRoles);
+      st.revNumberBase1 = true;
+      st.revisions[0].plannedCompletion = finish; st.revisions[0].forecastCompletion = finish;
+      if(document.getElementById("npWps").checked){
+        const map = {};
+        state.workPackages.forEach(w=>{ map[w.id] = uid("wp"); });
+        st.workPackages = state.workPackages.map(w=>Object.assign(clone(w), {id:map[w.id], parentId:w.parentId?(map[w.parentId]||null):null, expanded:true}));
+      }
+      if(document.getElementById("npDone").checked) cur.status = "complete";
+      const id = uid("prog");
+      try{ localStorage.setItem(progKey(j.id, id), JSON.stringify(st)); }catch(e){}
+      j.programmes.push({id, name, status:"active", created:toISO(new Date())});
+      saveWorkspace();
+      switchProgramme(id, true);
+      toast(name+" created at Rev 01");
+    }}
+  ]);
+  setTimeout(()=>{ const el=document.getElementById("npName"); if(el){ el.focus(); el.select(); } }, 30);
 }
 
 /* ============================================================
@@ -2835,7 +2970,7 @@ function renderIssuePreview(viewRev){
   document.getElementById("docPage").innerHTML =
     '<div class="doc-header">'+
       '<div class="doc-logo"><img src="'+CGC_LOGO_DATAURI+'" alt="Cheltenham Green Civils" style="height:40px; width:auto; display:block;"></div>'+
-      '<div class="doc-titleblock"><div class="doc-title">'+docTitle+'</div><div class="doc-ref">'+docRef+'</div></div>'+
+      '<div class="doc-titleblock"><div class="doc-title">'+docTitle+'</div><div class="doc-ref" style="color:#1A1A1A; font-weight:700; font-size:12px;">'+esc((currentProgramme()&&currentProgramme().name)||"")+'</div><div class="doc-ref">'+docRef+'</div></div>'+
     '</div>'+
     '<div class="doc-rule"></div>'+
     '<div class="doc-facts">'+
@@ -2855,7 +2990,7 @@ function renderIssuePreview(viewRev){
       '<div class="ttb-col" style="flex:1.1;"><div class="ttb-sub"><b>Job No:</b>&nbsp;'+esc(state.project.jobNo||"—")+'</div><div class="ttb-sub ttb-sub-b"><b>Date:</b>&nbsp;'+(report?reportDate:revDate)+'</div></div>'+
       '<div class="ttb-col" style="flex:1.2;"><div class="ttb-sub"><b>Revision No:</b>&nbsp;'+String(nextNum).padStart(2,"0")+'</div><div class="ttb-sub ttb-sub-b"><b>'+(report?'Report No:':'Rev. date:')+'</b>&nbsp;'+(report?prNo+' (data date '+fmtDate(report.dataDate)+')':revDate)+'</div></div>'+
       '<div class="ttb-col" style="flex:1.5;"><div class="ttb-sub"><b>Drawn:</b>&nbsp;'+esc(state.project.drawnBy||"")+'</div><div class="ttb-sub ttb-sub-b"><b>'+(report?'Issued by:':'Author:')+'</b>&nbsp;'+esc(report?(report.issuedBy||state.project.projectManager):state.project.projectManager)+'</div></div>'+
-      '<div class="ttb-col ttb-proj" style="flex:2.3;"><div style="font-weight:800; font-size:13px;">'+esc(state.project.name)+'</div><div style="font-size:11px; color:#2E6DA4; font-weight:600; margin-top:3px;">'+esc(state.project.principalContractor)+'</div></div>'+
+      '<div class="ttb-col ttb-proj" style="flex:2.3;"><div style="font-weight:800; font-size:13px;">'+esc(state.project.name)+' · '+esc((currentProgramme()&&currentProgramme().name)||"")+'</div><div style="font-size:11px; color:#2E6DA4; font-weight:600; margin-top:3px;">'+esc(state.project.principalContractor)+'</div></div>'+
     '</div>'+
     '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+pad2(nextNum)+(report?' · Progress Report '+prNo:'')+'</span><span>Issued '+(report?reportDate:revDate)+'</span></div>';
 
