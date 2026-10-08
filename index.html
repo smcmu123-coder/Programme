@@ -241,6 +241,7 @@
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   .doc-wrap{background:var(--surface-2); flex:1; overflow:auto; padding:24px; display:flex; justify-content:center;}
   .doc-page{background:#FFFFFF; color:#1A1A1A; width:100%; max-width:1580px; min-height:600px; box-shadow:0 4px 24px rgba(0,0,0,.15); padding:34px 38px; border-radius:2px;}
+  .doc-page.doc-portrait{max-width:1100px;}
   .doc-header{display:flex; justify-content:space-between; align-items:flex-start; gap:16px;}
   .doc-logo{display:flex; flex-direction:column; align-items:center; gap:4px;}
   .doc-roundel{width:44px; height:44px; border-radius:50%; background:#1F5A2D; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;}
@@ -512,7 +513,8 @@
       <div class="programme-toolbar">
         <button class="btn" id="backFromIssue">&larr; Back</button>
         <span class="status-chip" id="issueStatusChip">This is exactly what prints — choose &ldquo;Save as PDF&rdquo; as the destination in the dialog that opens.</span>
-        <button class="btn" id="printBtn" style="margin-left:auto;">Print / Save as PDF</button>
+        <div class="seg" id="orientSeg" style="margin-left:auto;" title="Page orientation (A3)"><button data-orient="landscape">Landscape</button><button data-orient="portrait">Portrait</button></div>
+        <button class="btn" id="printBtn">Print / Save as PDF</button>
         <button class="btn btn-primary" id="confirmIssueBtn">Confirm &amp; save revision</button>
       </div>
       <div class="doc-wrap"><div class="doc-page" id="docPage"></div></div>
@@ -2546,6 +2548,11 @@ document.getElementById("issueBtn").addEventListener("click", issueRevision);
 document.getElementById("issueBtn2").addEventListener("click", issueRevision);
 document.getElementById("backFromIssue").addEventListener("click", ()=>showView(issueReturnsTo));
 document.getElementById("printBtn").addEventListener("click", ()=> window.print());
+document.querySelectorAll("#orientSeg [data-orient]").forEach(b=>b.addEventListener("click", ()=>{
+  if(b.dataset.orient===printOrientation()) return;
+  setPrintOrientation(b.dataset.orient);
+  renderIssuePreview(lastViewRev);
+}));
 document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
   if(issueCtx && issueCtx.report && !issueCtx.saved){ saveProgressReport(issueCtx.report); return; }
   const nextNum = nextRevisionNumber();
@@ -2823,8 +2830,23 @@ const DOC_COLS = [
   {key:"finish", label:"Finish", w:56}
 ];
 const BAND_COLORS = ["#DCE8F5","#F3E1E8"];
-const DOC_PAGE_CONTENT_W = 1480; /* fits printable width of A3 landscape (420mm - 20mm margins) */
-const DOC_PAGE_CONTENT_H = 1000; /* fits printable height of A3 landscape (297mm - 20mm margins) */
+/* Printable area of an A3 sheet (10mm margins). Landscape: 420 x 297mm, portrait: 297 x 420mm. */
+const ORIENT_KEY = "vantry_print_orientation";
+function printOrientation(){ try{ return localStorage.getItem(ORIENT_KEY)==="portrait" ? "portrait" : "landscape"; }catch(e){ return "landscape"; } }
+function setPrintOrientation(o){
+  try{ localStorage.setItem(ORIENT_KEY, o); }catch(e){}
+  applyPrintOrientation();
+}
+function applyPrintOrientation(){
+  const o = printOrientation();
+  let tag = document.getElementById("pageOrientStyle");
+  if(!tag){ tag = document.createElement("style"); tag.id = "pageOrientStyle"; document.head.appendChild(tag); }
+  tag.textContent = "@media print{ @page{ size: A3 "+o+"; margin: 10mm; } }";
+  document.querySelectorAll("#orientSeg [data-orient]").forEach(b=>b.classList.toggle("active", b.dataset.orient===o));
+  const page = document.getElementById("docPage"); if(page) page.classList.toggle("doc-portrait", o==="portrait");
+}
+function docPageW(){ return printOrientation()==="portrait" ? 1020 : 1480; }
+function docPageH(){ return printOrientation()==="portrait" ? 1470 : 1000; }
 const DOC_ROW_H = 22;
 
 function renderIssuePreview(viewRev){
@@ -2852,6 +2874,8 @@ function renderIssuePreview(viewRev){
   const dataW = DOC_COLS.reduce((s,c)=>s+c.w,0);
   const MAX_DAY_W = 26;
   let totalDays = Math.round((range.end-range.start)/DAY_MS)+1;
+  const DOC_PAGE_CONTENT_W = docPageW();
+  applyPrintOrientation();
   const minDaysToFillPage = Math.floor((DOC_PAGE_CONTENT_W - dataW - 4) / MAX_DAY_W);
   if(totalDays < minDaysToFillPage) totalDays = minDaysToFillPage; // pad the timeline with trailing blank days so the chart always fills the page width
   let dayCols=[]; let d=new Date(range.start);
@@ -3061,7 +3085,7 @@ function padDocToPageBottom(dayCols, dw){
   const pageTop = docPageEl.getBoundingClientRect().top;
   const padTop = parseFloat(getComputedStyle(docPageEl).paddingTop) || 0;
   const contentHeight = (footerEl.getBoundingClientRect().bottom - pageTop) - padTop; // height the doc will actually print at (print strips this padding)
-  const gap = DOC_PAGE_CONTENT_H - contentHeight;
+  const gap = docPageH() - contentHeight;
   if(gap <= DOC_ROW_H) return; // already fills the page (or overflows onto further pages) — leave pagination to the browser
   const extraRows = Math.floor(gap / DOC_ROW_H);
   let fillerHtml = '';
