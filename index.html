@@ -259,6 +259,10 @@
   .doc-wordmark b{color:#1F5A2D;}
   .doc-wordmark i{font-style:normal; color:#7A847C; font-weight:600;}
   .doc-titleblock{text-align:right;}
+  .fit-toggle{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--text); padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); cursor:pointer; user-select:none; white-space:nowrap;}
+  .fit-toggle input{accent-color:var(--green); width:14px; height:14px; margin:0; cursor:pointer;}
+  .fit-note{font-size:11px; color:var(--text-muted); font-weight:500;}
+  .doc-titleblock-grid, .doc-footer{break-inside:avoid; page-break-inside:avoid;}
   .doc-title{font-size:19px; font-weight:800; color:#1A1A1A;}
   .doc-ref{font-size:10.5px; color:#7A847C; margin-top:2px;}
   .doc-rule{height:2px; background:#1F5A2D; margin:12px 0 14px;}
@@ -373,6 +377,7 @@
       --weekend-bg:#EEF0ED !important; --holiday-bg:#F6E8D2 !important; --holiday-hatch:#E4C48F !important; color-scheme:light !important; }
     html, body{ background:#fff !important; margin:0 !important; }
     .topbar, #view-issue .programme-toolbar, .toast, .modal-backdrop{ display:none !important; }
+    #docFit{ break-inside:auto; }
     main{ display:block !important; }
     .view{ display:none !important; }
     #view-issue{ display:block !important; padding:0 !important; }
@@ -523,7 +528,8 @@
       <div class="programme-toolbar">
         <button class="btn" id="backFromIssue">&larr; Back</button>
         <span class="status-chip" id="issueStatusChip">This is exactly what prints — choose &ldquo;Save as PDF&rdquo; as the destination in the dialog that opens.</span>
-        <div class="seg" id="orientSeg" style="margin-left:auto;" title="Page orientation (A3)"><button data-orient="landscape">Landscape</button><button data-orient="portrait">Portrait</button></div>
+        <label class="fit-toggle" style="margin-left:auto;" title="Shrinks the whole sheet just enough that everything — including the title block and footer — prints on one page"><input type="checkbox" id="fitOnePage"> Fit to one page <span class="fit-note" id="fitNote"></span></label>
+        <div class="seg" id="orientSeg" title="Page orientation (A3)"><button data-orient="landscape">Landscape</button><button data-orient="portrait">Portrait</button></div>
         <button class="btn" id="printBtn">Print / Save as PDF</button>
         <button class="btn btn-primary" id="confirmIssueBtn">Confirm &amp; save revision</button>
       </div>
@@ -3100,7 +3106,7 @@ function renderIssuePreview(viewRev){
     '</div>';
   }
 
-  document.getElementById("docPage").innerHTML =
+  document.getElementById("docPage").innerHTML = '<div id="docFit">'+
     '<div class="doc-header">'+
       '<div class="doc-logo"><img src="'+CGC_LOGO_DATAURI+'" alt="Cheltenham Green Civils" style="height:40px; width:auto; display:block;"></div>'+
       '<div class="doc-titleblock"><div class="doc-title">'+docTitle+'</div><div class="doc-ref" style="color:#1A1A1A; font-weight:700; font-size:12px;">'+esc((currentProgramme()&&currentProgramme().name)||"")+'</div><div class="doc-ref">'+docRef+'</div></div>'+
@@ -3124,9 +3130,10 @@ function renderIssuePreview(viewRev){
       '<div class="ttb-col" style="flex:1.5;"><div class="ttb-sub"><b>Drawn:</b>&nbsp;'+esc(state.project.drawnBy||"")+'</div><div class="ttb-sub ttb-sub-b"><b>'+(report?'Issued by:':'Author:')+'</b>&nbsp;'+esc(report?(report.issuedBy||state.project.projectManager):state.project.projectManager)+'</div></div>'+
       '<div class="ttb-col ttb-proj" style="flex:2.3;"><div style="font-weight:800; font-size:13px;">'+esc(state.project.name)+' · '+esc((currentProgramme()&&currentProgramme().name)||"")+'</div><div style="font-size:11px; color:#2E6DA4; font-weight:600; margin-top:3px;">'+esc(state.project.principalContractor)+'</div></div>'+
     '</div>'+
-    '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+pad2(nextNum)+(report?' · Progress Report '+prNo:'')+'</span><span>Issued '+(report?reportDate:revDate)+'</span></div>';
+    '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+pad2(nextNum)+(report?' · Progress Report '+prNo:'')+'</span><span>Issued '+(report?reportDate:revDate)+'</span></div></div>';
 
   padDocToPageBottom(dayCols, dw);
+  fitDocToOnePage();
 
   const confirmBtn = document.getElementById("confirmIssueBtn");
   const chip = document.getElementById("issueStatusChip");
@@ -3158,6 +3165,34 @@ function docCell(key, value, depth, isName){
 }
 function docFact(label,value){ return '<div class="doc-fact"><div class="doc-fact-label">'+esc(label)+'</div><div class="doc-fact-value">'+esc(value)+'</div></div>'; }
 function legendItem(color,label){ return '<span><i style="background:'+color+';"></i>'+esc(label)+'</span>'; }
+
+/* ---- Fit to one page: scales the whole sheet down (never up) so the title block and
+   footer can't spill onto a second page. Choice remembered on this device. ---- */
+const FIT_KEY = "vantry_fit_one_page";
+function fitOnePageOn(){ try{ return localStorage.getItem(FIT_KEY)!=="off"; }catch(e){ return true; } }
+function fitDocToOnePage(){
+  const page = document.getElementById("docPage"), fit = document.getElementById("docFit");
+  const box = document.getElementById("fitOnePage"), note = document.getElementById("fitNote");
+  if(box) box.checked = fitOnePageOn();
+  if(!page || !fit) return;
+  fit.style.zoom = "";
+  if(note) note.textContent = "";
+  const footer = fit.querySelector(".doc-footer");
+  if(!footer) return;
+  const top = fit.getBoundingClientRect().top;
+  const contentH = footer.getBoundingClientRect().bottom - top;
+  const contentW = Math.max(fit.scrollWidth, fit.getBoundingClientRect().width);
+  const scale = Math.min(1, docPageH()/contentH, (docPageW()+8)/contentW);
+  if(scale >= 0.999){ if(note && fitOnePageOn()) note.textContent = "· already fits"; return; }
+  if(!fitOnePageOn()){ if(note) note.textContent = "· runs to 2+ pages"; return; }
+  const z = Math.floor(scale*0.985*1000)/1000; // small safety margin for printer rounding
+  fit.style.zoom = String(z);
+  if(note) note.textContent = "· scaled to "+Math.round(z*100)+"%";
+}
+document.getElementById("fitOnePage").addEventListener("change", e=>{
+  try{ localStorage.setItem(FIT_KEY, e.target.checked ? "on" : "off"); }catch(err){}
+  renderIssuePreview(lastViewRev);
+});
 
 /* Keeps the title-block/footer pinned to the bottom of the sheet: measures how much
    of the printable A3 page the rendered document actually uses, then pads the Gantt
