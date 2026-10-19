@@ -108,7 +108,12 @@
   .pred-wp{margin-left:auto; font-size:11px; color:var(--text-muted);}
   .link-badge{display:inline-flex; vertical-align:middle; margin-left:5px; color:var(--text-muted);}
   .icon-btn:hover{background:var(--grey-green); color:var(--text);}
-  .indent-0{padding-left:0;} .indent-1{padding-left:18px;} .indent-2{padding-left:36px;}
+  .indent-0{padding-left:0;} .indent-1{padding-left:18px;} .indent-2{padding-left:36px;} .indent-3{padding-left:54px;} .indent-4{padding-left:72px;}
+  .row.wp.sub-wp{font-weight:650;}
+  .wp-summary{position:absolute; height:8px; background:#3A4A3F; border-radius:2px; z-index:2; pointer-events:none; opacity:.78;}
+  .wp-summary::before, .wp-summary::after{content:""; position:absolute; bottom:-5px; border-style:solid; border-width:5px 4px 0 4px; border-color:#3A4A3F transparent transparent transparent;}
+  .wp-summary::before{left:0;} .wp-summary::after{right:0;}
+  .wp-summary.sub{background:#7C8A80; height:6px;} .wp-summary.sub::before, .wp-summary.sub::after{border-color:#7C8A80 transparent transparent transparent;}
   .gantt-header{position:sticky; top:0; z-index:5; background:var(--surface-2); border-bottom:1px solid var(--border);}
   .gantt-month-row{display:flex; height:22px; border-bottom:1px solid var(--border);}
   .gantt-day-row{display:flex; height:22px;}
@@ -796,6 +801,23 @@ function activitiesInWp(wpId){
     (a.order||0)-(b.order||0));
 }
 function childWps(parentId){ return state.workPackages.filter(w=>w.parentId===parentId).sort((a,b)=>a.order-b.order); }
+/* ---- Sub-packages: a work package can sit inside another (e.g. Drainage › Foul water / Surface water),
+   so separate gangs can run in parallel under one package. ---- */
+function wpPath(id){
+  const names=[]; let w = state.workPackages.find(x=>x.id===id), guard=0;
+  while(w && guard++<20){ names.unshift(w.name); w = w.parentId ? state.workPackages.find(x=>x.id===w.parentId) : null; }
+  return names.join(" › ");
+}
+function wpTreeOrder(){
+  const out=[];
+  (function walk(pid, depth){ childWps(pid).forEach(w=>{ out.push({wp:w, depth}); walk(w.id, depth+1); }); })(null, 0);
+  return out;
+}
+function wpDescendantIds(id){
+  const ids=[];
+  (function walk(pid){ childWps(pid).forEach(w=>{ ids.push(w.id); walk(w.id); }); })(id);
+  return ids;
+}
 /* ---- Activity dependency links (finish-to-start, with a lag that can be negative) ----
    activity.predecessors: array of {id, lag} — lag is the working-day offset between that
    predecessor's finish and this activity's start, captured from whatever start date you
@@ -1087,22 +1109,23 @@ function renderProgramme(){
       const siblings = childWps(r.item.parentId);
       const sIdx = siblings.findIndex(w=>w.id===r.item.id);
       const isFirst = sIdx<=0, isLast = sIdx>=siblings.length-1;
-      treeHtml += '<div class="row wp" data-wpid="'+r.item.id+'">'+
-        '<div class="row-label-cell indent-'+Math.min(r.depth,2)+'" data-toggle="'+r.item.id+'">'+
+      treeHtml += '<div class="row wp'+(r.depth>0?" sub-wp":"")+'" data-wpid="'+r.item.id+'">'+
+        '<div class="row-label-cell indent-'+Math.min(r.depth,4)+'" data-toggle="'+r.item.id+'">'+
         '<span class="chevron'+(hasKids?"":" leaf")+(r.item.expanded?"":" collapsed")+'">'+chevronSvg()+'</span>'+
         '<span class="row-label">'+esc(r.item.name)+'</span></div>'+
         '<div class="row-actions">'+
         '<button class="icon-btn" data-move-wp-up="'+r.item.id+'" title="Move up"'+(isFirst?" disabled":"")+'>'+upSvg()+'</button>'+
         '<button class="icon-btn" data-move-wp-down="'+r.item.id+'" title="Move down"'+(isLast?" disabled":"")+'>'+downSvg()+'</button>'+
         '<button class="icon-btn" data-add-activity="'+r.item.id+'" title="Add activity">'+plusSvg()+'</button>'+
-        '<button class="icon-btn" data-edit-wp="'+r.item.id+'" title="Rename">'+editSvg()+'</button>'+
+        '<button class="icon-btn" data-add-subwp="'+r.item.id+'" title="Add sub-package (e.g. a second gang)">'+subWpSvg()+'</button>'+
+        '<button class="icon-btn" data-edit-wp="'+r.item.id+'" title="Edit work package">'+editSvg()+'</button>'+
         '<button class="icon-btn" data-del-wp="'+r.item.id+'" title="Delete">'+trashSvg()+'</button>'+
         '</div></div>';
     } else {
       const a=r.item;
       const predNames = (a.predecessors||[]).map(pl=>{ const p=state.activities.find(x=>x.id===pl.id); return p?p.name+(pl.lag<0?" (overlap)":""):null; }).filter(Boolean);
       treeHtml += '<div class="row activity" data-actid="'+a.id+'">'+
-        '<div class="row-label-cell indent-'+Math.min(r.depth,2)+'" data-open-activity="'+a.id+'">'+
+        '<div class="row-label-cell indent-'+Math.min(r.depth,4)+'" data-open-activity="'+a.id+'">'+
         '<span class="chevron leaf">'+chevronSvg()+'</span>'+
         '<span class="row-label">'+esc(a.name)+'</span>'+
         (predNames.length? ' <span class="link-badge" title="Starts after: '+esc(predNames.join(", "))+'">'+linkSvg()+'</span>' : '') +
@@ -1153,6 +1176,14 @@ function renderProgramme(){
   });
 
   function xFor(iso){ return Math.round((toDate(iso)-range.start)/DAY_MS)*dayWidth; }
+
+  rows.forEach((r,idx)=>{
+    if(r.type!=="wp") return;
+    const roll = wpRollup(r.item.id);
+    if(!roll) return;
+    const spanDays = Math.max(1, Math.round((toDate(roll.finish)-toDate(roll.start))/DAY_MS)+1);
+    ganttBody += '<div class="wp-summary'+(r.depth>0?" sub":"")+'" style="left:'+(xFor(roll.start)+2)+'px; top:'+(idx*38+13)+'px; width:'+Math.max(dayWidth-4, spanDays*dayWidth-4)+'px;" title="'+esc(wpPath(r.item.id))+' — '+fmtDate(roll.start)+' to '+fmtDate(roll.finish)+'"></div>';
+  });
 
   const barPos = {};
   rows.forEach((r,idx)=>{
@@ -1266,6 +1297,7 @@ function renderProgramme(){
   frame.querySelectorAll("[data-move-wp-down]").forEach(el=>el.addEventListener("click", ()=> moveWorkPackage(el.dataset.moveWpDown, 1)));
   frame.querySelectorAll("[data-add-activity]").forEach(el=>el.addEventListener("click", ()=> openActivityModal(null, el.dataset.addActivity)));
   frame.querySelectorAll("[data-edit-wp]").forEach(el=>el.addEventListener("click", ()=> openWpModal(el.dataset.editWp)));
+  frame.querySelectorAll("[data-add-subwp]").forEach(el=>el.addEventListener("click", ()=> openWpModal(null, el.dataset.addSubwp)));
   frame.querySelectorAll("[data-del-wp]").forEach(el=>el.addEventListener("click", ()=> deleteWp(el.dataset.delWp)));
   frame.querySelectorAll("[data-progress-activity]").forEach(el=>el.addEventListener("click", ()=> openProgressModal(el.dataset.progressActivity)));
   frame.querySelectorAll("[data-edit-activity]").forEach(el=>el.addEventListener("click", ()=> openActivityModal(el.dataset.editActivity)));
@@ -1578,6 +1610,7 @@ function commitActivityDrag(actId, newStart, newFinish){
 
 function chevronSvg(){ return '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3l3 4 3-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
 function linkSvg(){ return '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M5 7l2-2M4.2 8.3L2.6 9.9a1.9 1.9 0 0 1-2.7-2.7l1.9-1.9a1.9 1.9 0 0 1 2.7 0M7.8 3.7L9.4 2.1a1.9 1.9 0 0 1 2.7 2.7L10.2 6.7a1.9 1.9 0 0 1-2.7 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+function subWpSvg(){ return '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 1.5v7.5h3.5M2 5h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6.5v4M7 8.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'; }
 function plusSvg(){ return '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'; }
 function editSvg(){ return '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2L4 10l-2.6.6L2 8 8.5 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>'; }
 function trashSvg(){ return '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3.5h8M4.5 3.5V2h3v1.5M3 3.5l.5 7h5l.5-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
@@ -1586,28 +1619,53 @@ function progressSvg(){ return '<svg width="12" height="12" viewBox="0 0 12 12" 
 /* ============================================================
    WORK PACKAGE add / edit / delete
    ============================================================ */
-function openWpModal(id){
+function openWpModal(id, presetParentId){
   const editing = id? state.workPackages.find(w=>w.id===id) : null;
-  const body = '<div class="field"><label for="wpName">Work package name</label><input id="wpName" type="text" value="'+(editing?esc(editing.name):"")+'" placeholder="e.g. Groundworks"></div>';
-  openModal(editing?"Rename work package":"Add work package", body, [
+  const parentNow = editing ? (editing.parentId||"") : (presetParentId||"");
+  const blocked = new Set(editing ? [editing.id].concat(wpDescendantIds(editing.id)) : []);
+  const parentOptions = '<option value="">— Top level (its own work package) —</option>' +
+    wpTreeOrder().filter(t=>!blocked.has(t.wp.id)).map(t=>
+      '<option value="'+t.wp.id+'"'+(parentNow===t.wp.id?" selected":"")+'>'+"   ".repeat(t.depth)+esc(t.wp.name)+'</option>').join('');
+  const isSub = !!parentNow;
+  const body =
+    '<div class="field"><label for="wpName">'+(isSub&&!editing?"Sub-package name":"Work package name")+'</label><input id="wpName" type="text" value="'+(editing?esc(editing.name):"")+'" placeholder="'+(isSub?"e.g. Foul water":"e.g. Groundworks")+'"></div>'+
+    '<div class="field"><label for="wpParent">Sits under</label><select id="wpParent">'+parentOptions+'</select>'+
+    '<span style="font-size:11.5px; color:var(--text-muted);">Put it under another work package to split that package into separate runs — e.g. Foul water and Surface water under Drainage, each with its own gang and activities.</span></div>';
+  const title = editing ? "Edit work package" : (isSub ? "Add sub-package to "+wpPath(presetParentId) : "Add work package");
+  openModal(title, body, [
     {label:"Cancel", cls:"btn", action:closeModal},
-    {label: editing?"Save changes":"Create work package", cls:"btn btn-primary", action:()=>{
+    {label: editing?"Save changes":(isSub?"Create sub-package":"Create work package"), cls:"btn btn-primary", action:()=>{
       const name = document.getElementById("wpName").value.trim();
+      const parentId = document.getElementById("wpParent").value || null;
       if(!name){ toast("Enter a name for the work package"); return; }
-      if(editing){ editing.name=name; }
-      else { state.workPackages.push({id:uid("wp"), parentId:null, name, order:state.workPackages.length, expanded:true}); }
-      saveState(); closeModal(); renderProgramme(); toast(editing?"Work package updated":"Work package added");
+      const nextOrder = pid => { const sib = childWps(pid); return sib.length ? Math.max.apply(null, sib.map(w=>w.order||0))+1 : 0; };
+      if(editing){
+        if((editing.parentId||null)!==parentId){ editing.order = nextOrder(parentId); editing.parentId = parentId; }
+        editing.name = name;
+      } else {
+        state.workPackages.push({id:uid("wp"), parentId, name, order:nextOrder(parentId), expanded:true});
+      }
+      if(parentId){ const p = state.workPackages.find(w=>w.id===parentId); if(p) p.expanded = true; }
+      saveState(); closeModal(); renderProgramme();
+      toast(editing?"Work package updated":(parentId?"Sub-package added":"Work package added"));
     }}
   ]);
   setTimeout(()=>document.getElementById("wpName").focus(),30);
 }
 function deleteWp(id){
-  const acts = activitiesInWp(id);
-  openModal("Delete work package?", '<p style="font-size:13px; color:var(--text-muted);">This removes the work package'+(acts.length?" and its "+acts.length+" activit"+(acts.length===1?"y":"ies"):"")+'. This can\'t be undone.</p>', [
+  const subIds = wpDescendantIds(id);
+  const allIds = new Set([id].concat(subIds));
+  const acts = state.activities.filter(a=>allIds.has(a.workPackageId));
+  const parts = [];
+  if(subIds.length) parts.push(subIds.length+" sub-package"+(subIds.length===1?"":"s"));
+  if(acts.length) parts.push(acts.length+" activit"+(acts.length===1?"y":"ies"));
+  openModal("Delete work package?", '<p style="font-size:13px; color:var(--text-muted);">This removes the work package'+(parts.length?" and its "+parts.join(" and "):"")+'. This can\'t be undone.</p>', [
     {label:"Cancel", cls:"btn", action:closeModal},
     {label:"Delete", cls:"btn btn-danger", action:()=>{
-      state.workPackages = state.workPackages.filter(w=>w.id!==id);
-      state.activities = state.activities.filter(a=>a.workPackageId!==id);
+      const goneActs = new Set(acts.map(a=>a.id));
+      state.workPackages = state.workPackages.filter(w=>!allIds.has(w.id));
+      state.activities = state.activities.filter(a=>!allIds.has(a.workPackageId));
+      state.activities.forEach(a=>{ if(a.predecessors) a.predecessors = a.predecessors.filter(p=>!goneActs.has(p.id)); });
       saveState(); closeModal(); renderProgramme(); toast("Work package deleted");
     }}
   ]);
@@ -1619,7 +1677,7 @@ function deleteWp(id){
 function openActivityModal(id, presetWpId){
   const editing = id? state.activities.find(a=>a.id===id) : null;
   if(state.workPackages.length===0){ toast("Add a work package first"); return; }
-  const wpOptions = state.workPackages.map(w=>'<option value="'+w.id+'"'+((editing?editing.workPackageId:presetWpId)===w.id?" selected":"")+'>'+esc(w.name)+'</option>').join('');
+  const wpOptions = wpTreeOrder().map(t=>'<option value="'+t.wp.id+'"'+((editing?editing.workPackageId:presetWpId)===t.wp.id?" selected":"")+'>'+esc(wpPath(t.wp.id))+'</option>').join('');
   const labourMap = {};
   (editing?editing.labour:[]).forEach(l=> labourMap[l.roleName]=l.qty);
   const labourHtml = activeLabourRoles().map(role=>{
@@ -1630,7 +1688,7 @@ function openActivityModal(id, presetWpId){
 
   const blockedPredIds = editing ? getDescendants(editing.id) : new Set();
   const predCandidates = state.activities.filter(x=> x.id!==(editing?editing.id:null) && !blockedPredIds.has(x.id));
-  const wpNameById = {}; state.workPackages.forEach(w=> wpNameById[w.id]=w.name);
+  const wpNameById = {}; state.workPackages.forEach(w=> wpNameById[w.id]=wpPath(w.id));
   const predOptions = predCandidates.map(x=>
     '<label class="pred-pick"><input type="checkbox" class="pred-check" value="'+x.id+'"'+((editing&&(editing.predecessors||[]).some(p=>p.id===x.id))?" checked":"")+'> '+esc(x.name)+' <span class="pred-wp">'+esc(wpNameById[x.workPackageId]||"")+'</span></label>'
   ).join('');
@@ -1981,7 +2039,7 @@ function renderLookahead(){
   if(firstCol){ const w = firstCol.getBoundingClientRect().width; document.querySelectorAll("#laGrid .sticky2").forEach(el=>{ el.style.left = w+"px"; }); }
 
   // activities list
-  const wpName = id => { const w = state.workPackages.find(x=>x.id===id); return w? w.name : "—"; };
+  const wpName = id => { const w = state.workPackages.find(x=>x.id===id); return w? wpPath(id) : "—"; };
   document.getElementById("laActs").innerHTML = acts.length
     ? '<thead><tr><th>Activity</th><th>Work package</th><th>Start</th><th>Finish</th><th>Labour</th></tr></thead><tbody>'+
       acts.map(a=>'<tr><td style="font-weight:600;">'+esc(a.name)+'</td><td>'+esc(wpName(a.workPackageId))+'</td><td>'+fmtDate(a.plannedStart)+'</td><td>'+fmtDate(activityForecastFinish(a))+(activityForecastFinish(a)!==a.plannedFinish?' <span style="color:var(--amber); font-size:11px; font-weight:700;">(forecast)</span>':'')+'</td><td>'+
@@ -2464,7 +2522,7 @@ function renderProgressView(){
     const status = activityStatus(a);
     const pct = Math.max(0, Math.min(100, a.percentComplete||0));
     return '<tr>'+
-      '<td>'+esc(wp?wp.name:"—")+'</td>'+
+      '<td>'+esc(wp?wpPath(wp.id):"—")+'</td>'+
       '<td><b>'+esc(a.name)+'</b></td>'+
       '<td class="tnum">'+fmtDateShort(a.plannedStart)+' – '+fmtDateShort(a.plannedFinish)+'</td>'+
       '<td class="tnum">'+(a.actualStart?fmtDateShort(a.actualStart):"—")+'</td>'+
