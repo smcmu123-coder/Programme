@@ -81,6 +81,11 @@
   .seg button.active{background:var(--pale-green); color:var(--green);}
   .programme-frame{ display:flex; flex:1; min-height:0; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); overflow:hidden; box-shadow:var(--shadow); }
   .tree-pane{width:280px; flex-shrink:0; border-right:1px solid var(--border); display:flex; flex-direction:column;}
+  .tree-pane{position:relative;}
+  .pane-resizer{position:absolute; top:0; right:-4px; bottom:0; width:8px; cursor:col-resize; z-index:20;}
+  .pane-resizer::after{content:""; position:absolute; top:0; bottom:0; left:3px; width:2px; background:transparent; transition:background .12s;}
+  .pane-resizer:hover::after, body.pane-resizing .pane-resizer::after{background:var(--green);}
+  body.pane-resizing, body.pane-resizing *{cursor:col-resize !important; user-select:none !important;}
   .tree-head{ border-bottom:1px solid var(--border); background:var(--surface-2); display:flex; align-items:center; height:44px; flex-shrink:0; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); padding:0 12px; }
   .tree-scroll{overflow-y:auto; flex:1;}
   .gantt-pane{flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden;}
@@ -1241,7 +1246,7 @@ function renderProgramme(){
   ganttBody += '</div>';
 
   frame.innerHTML =
-    '<div class="tree-pane">'+treeHtml+'</div>'+
+    '<div class="tree-pane" style="width:'+treePaneWidth()+'px;">'+treeHtml+'<div class="pane-resizer" title="Drag to widen the Activity column · double-click to fit the longest name"></div></div>'+
     '<div class="gantt-pane"><div class="gantt-scroll" id="ganttScroll">'+
     '<div class="gantt-header" style="width:'+ganttWidth+'px;">'+ganttHeader+'</div>'+
     ganttBody+
@@ -1271,6 +1276,7 @@ function renderProgramme(){
   }));
   setupGanttBarDrag(frame, range);
   setupLinkDraw(frame);
+  setupTreeResize(frame);
   frame.querySelectorAll("[data-dl-edit]").forEach(el=>el.addEventListener("click", openDroplineModal));
   frame.querySelectorAll("[data-dl-del]").forEach(el=>el.addEventListener("click", e=>{
     e.stopPropagation();
@@ -1283,6 +1289,31 @@ function renderProgramme(){
   renderTopMeta();
 }
 let ganttDragJustHappened = false;
+/* ---- Resizable Activity column (width remembered on this device) ---- */
+const TREE_W_KEY = "vantry_tree_width";
+function treePaneWidth(){ let w = 280; try{ const v = Number(localStorage.getItem(TREE_W_KEY)); if(v) w = v; }catch(e){} return Math.max(200, Math.min(900, w)); }
+function setTreePaneWidth(w){ try{ localStorage.setItem(TREE_W_KEY, String(Math.round(w))); }catch(e){} }
+function setupTreeResize(frame){
+  const pane = frame.querySelector(".tree-pane"), grip = frame.querySelector(".pane-resizer");
+  if(!pane || !grip) return;
+  const maxW = ()=> Math.max(260, frame.getBoundingClientRect().width * 0.7);
+  grip.addEventListener("pointerdown", e=>{
+    if(e.button!==0) return;
+    e.preventDefault();
+    const startX = e.clientX, startW = pane.getBoundingClientRect().width;
+    document.body.classList.add("pane-resizing");
+    const move = ev=>{ pane.style.width = Math.max(200, Math.min(maxW(), startW + ev.clientX - startX))+"px"; };
+    const up = ()=>{ document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up); document.body.classList.remove("pane-resizing"); setTreePaneWidth(pane.getBoundingClientRect().width); };
+    document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
+  });
+  grip.addEventListener("dblclick", ()=>{
+    // fit the longest name: measure how much each label is cut off by
+    let need = 0;
+    pane.querySelectorAll(".row-label").forEach(l=>{ need = Math.max(need, l.scrollWidth - l.clientWidth); });
+    const w = Math.max(200, Math.min(maxW(), pane.getBoundingClientRect().width + need + 16));
+    pane.style.width = w+"px"; setTreePaneWidth(w);
+  });
+}
 /* ---- Drag-to-move / drag-to-resize activity bars on the interactive Gantt ----
    Reuses the existing working-day calendar (isWorkingDay/nextWorkingDay/prevWorkingDay/
    addWorkingDays/calculateWorkingDays) and the existing dependency cascade
