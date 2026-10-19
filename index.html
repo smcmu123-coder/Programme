@@ -93,16 +93,8 @@
   .chevron{width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text-muted); transition:transform .15s;}
   .chevron.collapsed{transform:rotate(-90deg);}
   .chevron.leaf{visibility:hidden;}
-  .row{position:relative;}
-  /* action buttons float over the end of the row on hover, so names get the full column width */
-  .row-actions{display:flex; gap:3px; opacity:0; pointer-events:none; position:absolute; right:0; top:0; bottom:0; align-items:center; padding:0 6px 0 18px; background:linear-gradient(to right, transparent, var(--surface) 14px);}
-  .row.wp .row-actions{background:linear-gradient(to right, transparent, var(--surface-2) 14px);}
-  .row:hover .row-actions{opacity:1; pointer-events:auto;}
-  .tree-pane{position:relative;}
-  .pane-resizer{position:absolute; top:0; right:-4px; bottom:0; width:8px; cursor:col-resize; z-index:20;}
-  .pane-resizer::after{content:""; position:absolute; top:0; bottom:0; left:3px; width:2px; background:transparent; transition:background .12s;}
-  .pane-resizer:hover::after, body.pane-resizing .pane-resizer::after{background:var(--green);}
-  body.pane-resizing, body.pane-resizing *{cursor:col-resize !important; user-select:none !important;}
+  .row-actions{display:flex; gap:3px; opacity:0; flex-shrink:0; padding-right:6px;}
+  .row:hover .row-actions{opacity:1;}
   .icon-btn{width:22px; height:22px; border:none; background:transparent; border-radius:5px; color:var(--text-muted); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   .icon-btn:disabled{opacity:.25; cursor:default;}
   .pred-list{max-height:140px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:4px 8px; margin-top:4px;}
@@ -207,6 +199,23 @@
   .modal-backdrop.open{display:flex;}
   .modal{background:var(--surface); border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.3); width:100%; max-width:480px; border:1px solid var(--border); animation:pop .14s ease-out;}
   @keyframes pop{from{opacity:0; transform:translateY(6px) scale(.99);} to{opacity:1; transform:none;}}
+  .modal.modal-wide{max-width:680px;}
+  .delay-intro{font-size:12.8px; color:var(--text-muted); margin:0 0 12px;}
+  .delay-item{border:1px solid var(--border); border-radius:10px; padding:12px 12px 2px; margin-bottom:10px; background:var(--surface);}
+  .delay-item.missing{border-color:#D0021B; box-shadow:0 0 0 1px #D0021B inset;}
+  .delay-head{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:3px;}
+  .delay-head b{font-size:13.5px;}
+  .delay-meta{font-size:11.8px; color:var(--text-muted); margin-bottom:10px;}
+  .delay-carry{font-size:11px; color:var(--text-muted); margin:-4px 0 10px; font-style:italic;}
+  .warn-box{background:var(--amber-bg); color:var(--text); border:1px solid var(--border); border-radius:9px; padding:10px 12px; font-size:12.5px; margin-bottom:12px;}
+  .warn-box ul{margin:6px 0 0 18px; padding:0;}
+  .info-line{font-size:12.8px; color:var(--text-muted); margin:0 0 12px;}
+  .doc-delays{margin-top:14px;}
+  .doc-delays table{width:100%; border-collapse:collapse; font-size:9.5px; color:#1A1A1A;}
+  .doc-delays th{background:#EEF0ED; text-align:left; font-size:8px; text-transform:uppercase; letter-spacing:.03em; color:#5B665E; padding:5px 6px; border:1px solid #CBD3CD;}
+  .doc-delays td{padding:5px 6px; border:1px solid #CBD3CD; vertical-align:top;}
+  .doc-delays .dnum{display:inline-flex; width:15px; height:15px; border-radius:50%; background:#D0021B; color:#fff; font-size:8px; font-weight:800; align-items:center; justify-content:center;}
+  .doc-delays tr{page-break-inside:avoid;}
   .modal-head{padding:16px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;}
   .modal-head h3{font-size:15px;}
   .modal-body{padding:16px 18px; max-height:64vh; overflow-y:auto;}
@@ -232,6 +241,7 @@
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   .doc-wrap{background:var(--surface-2); flex:1; overflow:auto; padding:24px; display:flex; justify-content:center;}
   .doc-page{background:#FFFFFF; color:#1A1A1A; width:100%; max-width:1580px; min-height:600px; box-shadow:0 4px 24px rgba(0,0,0,.15); padding:34px 38px; border-radius:2px;}
+  .doc-page.doc-portrait{max-width:1100px;}
   .doc-header{display:flex; justify-content:space-between; align-items:flex-start; gap:16px;}
   .doc-logo{display:flex; flex-direction:column; align-items:center; gap:4px;}
   .doc-roundel{width:44px; height:44px; border-radius:50%; background:#1F5A2D; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;}
@@ -248,7 +258,9 @@
   .doc-fact-label{font-size:9.5px; font-weight:700; color:#1F5A2D; text-transform:uppercase; letter-spacing:.05em;}
   .doc-fact-value{font-size:12.5px; font-weight:600; color:#2E6DA4; margin-top:2px;}
   .doc-bar{background:#1F5A2D; color:#fff; font-weight:800; font-size:11px; letter-spacing:.04em; padding:7px 12px; border-radius:6px; margin:14px 0 8px;}
-  .doc-gantt-wrap{border:1px solid #CBD3CD; border-radius:4px; overflow:hidden;}
+  .doc-gantt-wrap{border:1px solid #CBD3CD; border-radius:4px; overflow:hidden; border-collapse:separate; border-spacing:0; table-layout:fixed;}
+  .doc-gantt-wrap thead{display:table-header-group;}
+  .doc-gantt-wrap tr{break-inside:avoid; page-break-inside:avoid;}
   .doc-footer{display:flex; justify-content:space-between; font-size:9.5px; color:#7A847C; margin-top:18px; padding-top:10px; border-top:1px solid #CBD3CD;}
   .doc-legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:10.5px; color:#5B665E;}
   .doc-legend span{display:flex; align-items:center; gap:5px;}
@@ -262,6 +274,8 @@
   .ttb-sub-b{border-top:1.5px solid #1A1A1A;}
   .job-switch{display:inline-flex; align-items:center; gap:7px; border:1px solid transparent; background:transparent; color:var(--text); padding:3px 8px 3px 6px; border-radius:8px; margin-left:-6px;}
   .job-switch:hover{border-color:var(--border); background:var(--surface-2);}
+  .prog-name{font-size:13px; font-weight:600; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:26ch;}
+  .prog-switch{margin-left:0;}
   .job-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
   .job-count{font-size:10.5px; font-weight:700; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:100px; padding:1px 7px;}
   .job-list{display:flex; flex-direction:column; gap:6px; margin-bottom:6px;}
@@ -288,16 +302,6 @@
   .lb-sel.unalloc{color:var(--text-faint); font-weight:500;}
   .lb-sel.gang{background:var(--surface-2);}
   .lb-table td.selcell{padding:4px 5px;}
-  .lv-flag{display:inline-block; font-size:9px; font-weight:800; background:var(--amber); color:#fff; border-radius:3px; padding:0 3px; vertical-align:1px;}
-  .lv-note{display:block; font-size:10px; font-weight:700; color:var(--amber); margin-top:2px; white-space:nowrap;}
-  .lb-sel.on-leave{opacity:.45;}
-  .lv-chip{display:inline-block; background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); border-radius:100px; padding:1px 8px; font-size:11px; font-weight:700; margin:2px 4px 2px 0; white-space:nowrap; cursor:pointer;}
-  .lv-list{display:flex; flex-direction:column; gap:6px; margin-bottom:8px;}
-  .lv-row{display:flex; align-items:center; gap:8px; padding:7px 10px; border:1px solid var(--border); border-radius:7px; background:var(--surface-2); font-size:12.5px;}
-  .lv-row .lv-txt{flex:1;}
-  .gang-edit{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
-  .gang-edit input{flex:1; border:1px solid var(--border); border-radius:7px; padding:7px 9px; background:var(--surface); color:var(--text); font-weight:600;}
-  .gang-edit span{font-size:11.5px; color:var(--text-muted); white-space:nowrap;}
   .move-list{display:flex; flex-direction:column; gap:8px;}
   .move-item{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:9px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); font-size:12.8px;}
   .move-item .mv-text{flex:1; min-width:240px;}
@@ -391,7 +395,7 @@
       <button class="icon-btn undo-btn" id="undoBtn" title="Undo (Ctrl+Z)" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5.5 3L2.5 6l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 6h7a4 4 0 0 1 0 8H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       <button class="icon-btn undo-btn" id="redoBtn" title="Redo (Ctrl+Y)" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M10.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 6h-7a4 4 0 0 0 0 8H9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
     </div>
-    <button class="btn btn-primary btn-sm" id="issueBtn">Issue revision</button>
+    <button class="btn btn-primary btn-sm" id="issueBtn" title="Only needed when activity dates or durations have changed">Issue revision</button>
   </div>
 
   <main>
@@ -410,11 +414,15 @@
     </section>
 
     <section class="view" id="view-progress">
-      <div class="note-banner">Report actual progress against the programme: record what's actually happened on site (actual start, % complete, forecast finish) and see variance against the planned dates, activity by activity.</div>
+      <div class="note-banner">Record progress on site (actual start, % complete, forecast finish), then issue a progress report to print the current revision with an updated dropline. You only need a new revision when activity dates or durations change.</div>
       <div class="dash-grid" id="progressStats"></div>
       <div class="panel">
         <div class="panel-head"><h3>Activity progress</h3></div>
         <div class="panel-body" style="padding:0;"><div style="overflow-x:auto;"><table class="rev-table" id="progressTable"></table></div></div>
+      </div>
+      <div class="panel" style="margin-top:14px;">
+        <div class="panel-head"><h3>Issued progress reports</h3><button class="btn btn-primary btn-sm" id="issueReportBtn2">Issue progress report</button></div>
+        <div class="panel-body" style="padding:0;"><div style="overflow-x:auto;"><table class="rev-table" id="reportTable"></table></div></div>
       </div>
     </section>
 
@@ -466,10 +474,6 @@
         <div class="panel-head"><h3>Weekly allocation board</h3><span style="font-size:11.5px; color:var(--text-muted);">Use a gang's row to move the whole gang at once</span></div>
         <div class="panel-body" style="padding:0;"><div class="la-scroll" id="lbBoard"></div></div>
       </div>
-      <div class="panel" style="margin-top:14px;">
-        <div class="panel-head"><h3>Employees</h3><div style="display:flex; gap:6px; flex-wrap:wrap;"><button class="btn btn-sm" id="lbGangs">Manage gangs</button><button class="btn btn-sm" id="lbLeave">Book leave</button><button class="btn btn-sm btn-primary" id="lbAddEmp3">+ Employee</button></div></div>
-        <div class="panel-body" style="padding:0;"><div style="overflow-x:auto;"><table class="rev-table" id="lbEmpTable"></table></div></div>
-      </div>
     </section>
 
     <section class="view" id="view-revisions">
@@ -509,7 +513,8 @@
       <div class="programme-toolbar">
         <button class="btn" id="backFromIssue">&larr; Back</button>
         <span class="status-chip" id="issueStatusChip">This is exactly what prints — choose &ldquo;Save as PDF&rdquo; as the destination in the dialog that opens.</span>
-        <button class="btn" id="printBtn" style="margin-left:auto;">Print / Save as PDF</button>
+        <div class="seg" id="orientSeg" style="margin-left:auto;" title="Page orientation (A3)"><button data-orient="landscape">Landscape</button><button data-orient="portrait">Portrait</button></div>
+        <button class="btn" id="printBtn">Print / Save as PDF</button>
         <button class="btn btn-primary" id="confirmIssueBtn">Confirm &amp; save revision</button>
       </div>
       <div class="doc-wrap"><div class="doc-page" id="docPage"></div></div>
@@ -642,6 +647,7 @@ function defaultState(){
     activities:[],
     dropline: {date:null, label:"STATUS DATE"},
     revisions:[{id:uid("rev"), number:1, label:"Original Programme", date:today, statusDate:null, plannedCompletion:today, forecastCompletion:today, issuedBy:""}],
+    progressReports:[],
     nextRevisionSeed:1
   };
 }
@@ -654,13 +660,23 @@ const WS_KEY = "vantry_workspace_v1";
 const JOB_COLOURS = ["#1F5A2D","#2E6DA4","#B4560F","#7A4FB5","#0F7A6C","#B23A2E","#8C6D1F","#5B665E"];
 let ws = null;
 function jobKey(id){ return id==="job_main" ? "vantry_programme_v5" : "vantry_programme_v5__"+id; }
+/* Programmes within a job. A job's first programme keeps the job's original storage key
+   (prog_main), so existing programmes stay exactly where they were. */
+function progKey(jobId, progId){ return (!progId || progId==="prog_main") ? jobKey(jobId) : jobKey(jobId)+"__"+progId; }
+function ensureProgrammes(j){
+  if(!Array.isArray(j.programmes) || !j.programmes.length) j.programmes = [{id:"prog_main", name:"Programme 1", status:"active"}];
+  if(!j.programmes.some(p=>p.id===j.currentProgrammeId)) j.currentProgrammeId = j.programmes[j.programmes.length-1].id;
+}
+function currentProgramme(){ const j=currentJob(); return j ? j.programmes.find(p=>p.id===j.currentProgrammeId) : null; }
+function curKey(){ return progKey(ws.currentJobId, currentJob().currentProgrammeId); }
 function loadWorkspace(){
   try{ const raw = localStorage.getItem(WS_KEY); if(raw) ws = JSON.parse(raw); }catch(e){}
   if(!ws || !Array.isArray(ws.jobs) || !ws.jobs.length){
     ws = { jobs:[{id:"job_main", name:"", colour:JOB_COLOURS[0]}], currentJobId:"job_main", employees:[], allocations:{} };
   }
-  ws.employees = ws.employees || []; ws.allocations = ws.allocations || {}; ws.leave = ws.leave || [];
+  ws.employees = ws.employees || []; ws.allocations = ws.allocations || {};
   if(!ws.jobs.some(j=>j.id===ws.currentJobId)) ws.currentJobId = ws.jobs[0].id;
+  ws.jobs.forEach(ensureProgrammes);
 }
 function saveWorkspace(){ try{ localStorage.setItem(WS_KEY, JSON.stringify(ws)); }catch(e){} }
 function currentJob(){ return ws.jobs.find(j=>j.id===ws.currentJobId); }
@@ -668,13 +684,14 @@ function jobDisplayName(j){ return (j && j.name) ? j.name : "Untitled job"; }
 /* Read any job's programme — the live one for the open job, otherwise straight from storage. */
 function getJobProgramme(id){
   if(id===ws.currentJobId) return state;
-  try{ const raw = localStorage.getItem(jobKey(id)); if(raw) return JSON.parse(raw); }catch(e){}
+  const j = ws.jobs.find(x=>x.id===id);
+  try{ const raw = localStorage.getItem(progKey(id, j && j.currentProgrammeId)); if(raw) return JSON.parse(raw); }catch(e){}
   return null;
 }
 function loadState(){
   if(!ws) loadWorkspace();
   try{
-    const raw = localStorage.getItem(jobKey(ws.currentJobId));
+    const raw = localStorage.getItem(curKey());
     if(raw){ state = JSON.parse(raw); normalizeState(); syncJobName(); return; }
   }catch(e){}
   state = defaultState();
@@ -687,6 +704,7 @@ function syncJobName(){
 function normalizeState(){
   if(!state.project.jobNo) state.project.jobNo = "";
   if(state.project.drawnBy===undefined) state.project.drawnBy = "";
+  if(!Array.isArray(state.progressReports)) state.progressReports = [];
   state.activities.forEach(a=>{
     if(a.color===undefined) a.color = null;
     if(!a.predecessors){
@@ -707,9 +725,9 @@ function normalizeState(){
    Several saves in the same click are merged into one step. History lasts for this session. */
 const HISTORY_LIMIT = 100;
 let undoStack = [], redoStack = [], lastSnap = null, saveBatchOpen = false, mergeNextSave = false;
-function snapOf(st){ return JSON.stringify({s:st, w:{employees:ws.employees, allocations:ws.allocations, leave:ws.leave||[]}}, (k,v)=> k==="expanded" ? undefined : v); }
+function snapOf(st){ return JSON.stringify({s:st, w:{employees:ws.employees, allocations:ws.allocations}}, (k,v)=> k==="expanded" ? undefined : v); }
 function saveState(){
-  try{ localStorage.setItem(jobKey(ws.currentJobId), JSON.stringify(state)); }catch(e){}
+  try{ localStorage.setItem(curKey(), JSON.stringify(state)); }catch(e){}
   syncJobName(); saveWorkspace();
   const snap = snapOf(state);
   if(lastSnap===null){ lastSnap = snap; return; }
@@ -729,10 +747,10 @@ function restoreSnap(snap){
   (state.workPackages||[]).forEach(w=>{ expanded[w.id] = w.expanded; });
   const parsed = JSON.parse(snap);
   state = parsed.s;
-  ws.employees = parsed.w.employees; ws.allocations = parsed.w.allocations; ws.leave = parsed.w.leave||[];
+  ws.employees = parsed.w.employees; ws.allocations = parsed.w.allocations;
   (state.workPackages||[]).forEach(w=>{ w.expanded = expanded[w.id]!==undefined ? expanded[w.id] : true; });
   lastSnap = snap;
-  try{ localStorage.setItem(jobKey(ws.currentJobId), JSON.stringify(state)); }catch(e){}
+  try{ localStorage.setItem(curKey(), JSON.stringify(state)); }catch(e){}
   syncJobName(); saveWorkspace();
   if(document.getElementById("modalBackdrop").classList.contains("open")) closeModal();
   const active = document.querySelector(".view.active");
@@ -765,7 +783,13 @@ lastSnap = snapOf(state);
 /* ============================================================
    DERIVED HELPERS
    ============================================================ */
-function activitiesInWp(wpId){ return state.activities.filter(a=>a.workPackageId===wpId).sort((a,b)=>a.order-b.order); }
+/* Activities in a work package always list in date order: earliest start first, then earliest finish. */
+function activitiesInWp(wpId){
+  return state.activities.filter(a=>a.workPackageId===wpId).sort((a,b)=>
+    (a.plannedStart||"").localeCompare(b.plannedStart||"") ||
+    (a.plannedFinish||"").localeCompare(b.plannedFinish||"") ||
+    (a.order||0)-(b.order||0));
+}
 function childWps(parentId){ return state.workPackages.filter(w=>w.parentId===parentId).sort((a,b)=>a.order-b.order); }
 /* ---- Activity dependency links (finish-to-start, with a lag that can be negative) ----
    activity.predecessors: array of {id, lag} — lag is the working-day offset between that
@@ -889,6 +913,11 @@ function forecastCompletionISO(){
 }
 function activeLabourRoles(){ return state.labourRoles.filter(r=>r.active); }
 function currentRevision(){ return state.revisions[state.revisions.length-1]; }
+/* A new programme starts with a Rev 01 placeholder that hasn't been issued yet (no snapshot).
+   The first issue fills that Rev 01 rather than jumping to Rev 02. */
+function rev01Pending(){ return state.revisions.length===1 && !state.revisions[0].snapshot; }
+function nextRevisionNumber(){ return rev01Pending() ? 1 : currentRevision().number+1; }
+function lastIssuedRevision(){ for(let i=state.revisions.length-1;i>=0;i--){ if(state.revisions[i].snapshot) return state.revisions[i]; } return null; }
 
 const BAR_PALETTE = ["#1F5A2D","#2E6DA4","#B4560F","#7A4FB5","#B23A2E","#0F7A6C","#8C6D1F","#5B665E"];
 function barVisual(a){
@@ -984,9 +1013,11 @@ function renderTopMeta(){
   const rev = currentRevision();
   document.getElementById("projMeta").innerHTML =
     '<button class="job-switch" id="jobSwitch" title="Switch job"><span class="job-dot" style="background:'+((currentJob()&&currentJob().colour)||"#1F5A2D")+';"></span><span class="proj-name">'+esc(state.project.name||"Untitled job")+'</span>'+(ws.jobs.length>1?'<span class="job-count">'+ws.jobs.length+' jobs</span>':'')+'<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
+    '<button class="job-switch prog-switch" id="progSwitch" title="Switch or start a programme on this job"><span class="prog-name">'+esc((currentProgramme()&&currentProgramme().name)||"Programme")+'</span>'+((currentProgramme()&&currentProgramme().status==="complete")?'<span class="job-count">Complete</span>':'')+(currentJob().programmes.length>1?'<span class="job-count">'+currentJob().programmes.length+' programmes</span>':'')+'<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
     '<span class="rev-chip">REV '+String(rev.number).padStart(2,"0")+'</span>'+
     '<span class="status-chip">'+(state.dropline.date? "Status date "+fmtDate(state.dropline.date) : "No status date set")+'</span>';
   document.getElementById("jobSwitch").addEventListener("click", openJobsModal);
+  document.getElementById("progSwitch").addEventListener("click", openProgrammesModal);
 }
 function toast(msg){
   const t=document.getElementById("toast");
@@ -1054,7 +1085,7 @@ function renderProgramme(){
       treeHtml += '<div class="row wp" data-wpid="'+r.item.id+'">'+
         '<div class="row-label-cell indent-'+Math.min(r.depth,2)+'" data-toggle="'+r.item.id+'">'+
         '<span class="chevron'+(hasKids?"":" leaf")+(r.item.expanded?"":" collapsed")+'">'+chevronSvg()+'</span>'+
-        '<span class="row-label" title="'+esc(r.item.name)+'">'+esc(r.item.name)+'</span></div>'+
+        '<span class="row-label">'+esc(r.item.name)+'</span></div>'+
         '<div class="row-actions">'+
         '<button class="icon-btn" data-move-wp-up="'+r.item.id+'" title="Move up"'+(isFirst?" disabled":"")+'>'+upSvg()+'</button>'+
         '<button class="icon-btn" data-move-wp-down="'+r.item.id+'" title="Move down"'+(isLast?" disabled":"")+'>'+downSvg()+'</button>'+
@@ -1068,7 +1099,7 @@ function renderProgramme(){
       treeHtml += '<div class="row activity" data-actid="'+a.id+'">'+
         '<div class="row-label-cell indent-'+Math.min(r.depth,2)+'" data-open-activity="'+a.id+'">'+
         '<span class="chevron leaf">'+chevronSvg()+'</span>'+
-        '<span class="row-label" title="'+esc(a.name)+'">'+esc(a.name)+'</span>'+
+        '<span class="row-label">'+esc(a.name)+'</span>'+
         (predNames.length? ' <span class="link-badge" title="Starts after: '+esc(predNames.join(", "))+'">'+linkSvg()+'</span>' : '') +
         (activityStage(a)!=="not-started" ? ' <span class="pill status-'+activityStatus(a)+'" style="padding:1px 7px; font-size:10px;">'+(a.percentComplete||0)+'%</span>' : '') +
         '</div>'+
@@ -1210,7 +1241,7 @@ function renderProgramme(){
   ganttBody += '</div>';
 
   frame.innerHTML =
-    '<div class="tree-pane" style="width:'+treePaneWidth()+'px;">'+treeHtml+'<div class="pane-resizer" title="Drag to widen the Activity column · double-click to fit the longest name"></div></div>'+
+    '<div class="tree-pane">'+treeHtml+'</div>'+
     '<div class="gantt-pane"><div class="gantt-scroll" id="ganttScroll">'+
     '<div class="gantt-header" style="width:'+ganttWidth+'px;">'+ganttHeader+'</div>'+
     ganttBody+
@@ -1240,7 +1271,6 @@ function renderProgramme(){
   }));
   setupGanttBarDrag(frame, range);
   setupLinkDraw(frame);
-  setupTreeResize(frame);
   frame.querySelectorAll("[data-dl-edit]").forEach(el=>el.addEventListener("click", openDroplineModal));
   frame.querySelectorAll("[data-dl-del]").forEach(el=>el.addEventListener("click", e=>{
     e.stopPropagation();
@@ -1253,31 +1283,6 @@ function renderProgramme(){
   renderTopMeta();
 }
 let ganttDragJustHappened = false;
-/* ---- Resizable Activity column (width remembered on this device) ---- */
-const TREE_W_KEY = "vantry_tree_width";
-function treePaneWidth(){ let w = 280; try{ const v = Number(localStorage.getItem(TREE_W_KEY)); if(v) w = v; }catch(e){} return Math.max(200, Math.min(900, w)); }
-function setTreePaneWidth(w){ try{ localStorage.setItem(TREE_W_KEY, String(Math.round(w))); }catch(e){} }
-function setupTreeResize(frame){
-  const pane = frame.querySelector(".tree-pane"), grip = frame.querySelector(".pane-resizer");
-  if(!pane || !grip) return;
-  const maxW = ()=> Math.max(260, frame.getBoundingClientRect().width * 0.7);
-  grip.addEventListener("pointerdown", e=>{
-    if(e.button!==0) return;
-    e.preventDefault();
-    const startX = e.clientX, startW = pane.getBoundingClientRect().width;
-    document.body.classList.add("pane-resizing");
-    const move = ev=>{ pane.style.width = Math.max(200, Math.min(maxW(), startW + ev.clientX - startX))+"px"; };
-    const up = ()=>{ document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up); document.body.classList.remove("pane-resizing"); setTreePaneWidth(pane.getBoundingClientRect().width); };
-    document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
-  });
-  grip.addEventListener("dblclick", ()=>{
-    // fit the longest name: measure how much each label is cut off by
-    let need = 0;
-    pane.querySelectorAll(".row-label").forEach(l=>{ need = Math.max(need, l.scrollWidth - l.clientWidth); });
-    const w = Math.max(200, Math.min(maxW(), pane.getBoundingClientRect().width + need + 16));
-    pane.style.width = w+"px"; setTreePaneWidth(w);
-  });
-}
 /* ---- Drag-to-move / drag-to-resize activity bars on the interactive Gantt ----
    Reuses the existing working-day calendar (isWorkingDay/nextWorkingDay/prevWorkingDay/
    addWorkingDays/calculateWorkingDays) and the existing dependency cascade
@@ -1771,8 +1776,9 @@ document.getElementById("addActivityBtn").addEventListener("click", ()=>openActi
 /* ============================================================
    MODAL ENGINE
    ============================================================ */
-function openModal(title, bodyHtml, actions){
+function openModal(title, bodyHtml, actions, opts){
   const root=document.getElementById("modalRoot");
+  root.classList.toggle("modal-wide", !!(opts && opts.wide));
   root.innerHTML =
     '<div class="modal-head"><h3>'+esc(title)+'</h3><button class="close-x" id="modalClose">✕</button></div>'+
     '<div class="modal-body">'+bodyHtml+'</div>'+
@@ -1801,7 +1807,7 @@ function renderDashboard(){
   const doneCount = state.activities.filter(a=>activityStage(a)==="complete").length;
 
   document.getElementById("dashStats").innerHTML =
-    stat("Current revision","REV "+String(currentRevision().number).padStart(2,"0"), currentRevision().label) +
+    stat("Current revision","REV "+String(currentRevision().number).padStart(2,"0"), "issued "+fmtDate(currentRevision().date)) +
     stat("Status date", state.dropline.date?fmtDate(state.dropline.date):"Not set","") +
     stat("Planned completion", fmtDate(state.project.plannedCompletion),"") +
     stat("Forecast completion", fmtDate(forecastCompletionISO()), "") +
@@ -1814,7 +1820,9 @@ function renderDashboard(){
     kv("Labour roles in use", activeLabourRoles().length) +
     kv("Weekly dropline", state.dropline.date? fmtDate(state.dropline.date) : "Not set") +
     kv("Revisions issued", state.revisions.length) +
-    kv("Last issued", state.revisions.length>1? fmtDate(state.revisions[state.revisions.length-1].date) : "Not yet issued");
+    kv("Last issued", lastIssuedRevision()? "Rev "+pad2(lastIssuedRevision().number)+" · "+fmtDate(lastIssuedRevision().date) : "Not yet issued") +
+    kv("Progress reports issued", state.progressReports.length) +
+    kv("Last progress report", state.progressReports.length? "PR "+pad2(state.progressReports[state.progressReports.length-1].number)+" · data date "+fmtDate(state.progressReports[state.progressReports.length-1].dataDate) : "None yet");
 
   document.getElementById("dashDetails").innerHTML =
     kv("Client", state.project.client) +
@@ -1875,7 +1883,7 @@ function renderLookahead(){
   // Once employees are set up on the Labour tab, "on site" comes from who's allocated to this job each week.
   const plannerMode = ws.employees.length>0;
   const onSite = (r, dd) => {
-    if(plannerMode) return allocatedCount(ws.currentJobId, mondayOfISO(dd||days[0]||laFromISO), r, dd);
+    if(plannerMode) return allocatedCount(ws.currentJobId, mondayOfISO(dd||days[0]||laFromISO), r);
     const v = state.labourOnSite[r]; return (v===undefined||v===null||v==="") ? null : Number(v);
   };
   const dayTotal = dd => roleNames.reduce((sum,r)=>sum+req[r][dd],0);
@@ -1996,7 +2004,7 @@ function openJobsModal(){
     openModal("Delete job?", '<p style="font-size:13px; color:var(--text-muted);">This permanently deletes the programme for <b>'+esc(jobDisplayName(j))+'</b>, its revisions, and everyone\'s allocations to it. This can\'t be undone.</p>', [
       {label:"Cancel", cls:"btn", action:openJobsModal},
       {label:"Delete job", cls:"btn btn-danger", action:()=>{
-        try{ localStorage.removeItem(jobKey(j.id)); }catch(e){}
+        (j.programmes||[{id:"prog_main"}]).forEach(pr=>{ try{ localStorage.removeItem(progKey(j.id, pr.id)); }catch(e){} });
         ws.jobs = ws.jobs.filter(x=>x.id!==j.id);
         Object.keys(ws.allocations).forEach(emp=>{ Object.keys(ws.allocations[emp]).forEach(wk=>{ if(ws.allocations[emp][wk]===j.id) delete ws.allocations[emp][wk]; }); });
         saveWorkspace(); undoStack=[]; redoStack=[]; lastSnap=snapOf(state); updateUndoButtons();
@@ -2011,7 +2019,8 @@ function openNewJobModal(){
     '<div class="field"><label for="njName">Job name</label><input id="njName" type="text" placeholder="e.g. Bramhall"></div>'+
     '<div class="field"><label for="njNo">Job number</label><input id="njNo" type="text" placeholder="e.g. CG180"></div>'+
     '<div class="field"><label for="njPC">Principal contractor</label><input id="njPC" type="text"></div>'+
-    '<div class="field"><label for="njStart">Programme start</label><input id="njStart" type="date" value="'+toISO(new Date())+'"></div>'+
+    '<div class="field-row"><div class="field"><label for="njProg">Programme name</label><input id="njProg" type="text" value="Programme 1"></div>'+
+    '<div class="field"><label for="njStart">Programme start</label><input id="njStart" type="date" value="'+toISO(new Date())+'"></div></div>'+
     '<p style="font-size:12px; color:var(--text-muted); margin:0;">Company details and labour trades are copied from the job you have open, so trades match up across jobs.</p>';
   openModal("New job", body, [
     {label:"Cancel", cls:"btn", action:openJobsModal},
@@ -2028,13 +2037,132 @@ function openNewJobModal(){
       st.revNumberBase1 = true;
       const id = uid("job");
       try{ localStorage.setItem(jobKey(id), JSON.stringify(st)); }catch(e){}
-      ws.jobs.push({id, name, jobNo:st.project.jobNo, colour:JOB_COLOURS[ws.jobs.length % JOB_COLOURS.length]});
+      ws.jobs.push({id, name, jobNo:st.project.jobNo, colour:JOB_COLOURS[ws.jobs.length % JOB_COLOURS.length],
+        programmes:[{id:"prog_main", name:(document.getElementById("njProg").value.trim()||"Programme 1"), status:"active", created:toISO(new Date())}], currentProgrammeId:"prog_main"});
       saveWorkspace();
       switchJob(id, true);
       toast("Job created — add its work packages and activities");
     }}
   ]);
   setTimeout(()=>{ const el=document.getElementById("njName"); if(el) el.focus(); }, 30);
+}
+
+/* ============================================================
+   PROGRAMMES — several programmes on one job (e.g. a new short term
+   programme once the last one is complete). Each has its own activities,
+   revisions (from Rev 01), droplines and progress reports.
+   ============================================================ */
+function readProgramme(jobId, progId){
+  const j = ws.jobs.find(x=>x.id===jobId);
+  if(jobId===ws.currentJobId && j && j.currentProgrammeId===progId) return state;
+  try{ const raw = localStorage.getItem(progKey(jobId, progId)); if(raw) return JSON.parse(raw); }catch(e){}
+  return null;
+}
+function switchProgramme(progId, quiet){
+  const j = currentJob();
+  if(progId===j.currentProgrammeId){ closeModal(); return; }
+  saveState();
+  j.currentProgrammeId = progId;
+  saveWorkspace();
+  loadState();
+  undoStack = []; redoStack = []; lastSnap = snapOf(state); updateUndoButtons();
+  closeModal();
+  const active = document.querySelector(".view.active");
+  let name = active ? active.id.replace("view-","") : "programme";
+  if(name==="issue") name = "programme";
+  showView(name); renderTopMeta();
+  if(!quiet) toast("Opened "+currentProgramme().name);
+}
+function openProgrammesModal(){
+  const j = currentJob();
+  const list = j.programmes.map(pr=>{
+    const cur = pr.id===j.currentProgrammeId;
+    const st = readProgramme(j.id, pr.id);
+    const revN = st && st.revisions && st.revisions.length ? st.revisions[st.revisions.length-1].number : 1;
+    const acts = st && st.activities ? st.activities.length : 0;
+    const dates = st && st.project ? fmtDate(st.project.programmeStart)+' – '+fmtDate(st.project.plannedCompletion) : '';
+    return '<div class="job-item'+(cur?" current":"")+'">'+
+      '<span class="ji-name">'+esc(pr.name)+(pr.status==="complete"?' <span class="job-count">Complete</span>':'')+
+        '<span class="ji-sub">Rev '+pad2(revN)+' · '+acts+' activit'+(acts===1?'y':'ies')+(dates?' · '+dates:'')+(cur?' · open now':'')+'</span></span>'+
+      (cur?'':'<button class="btn btn-sm" data-open-prog="'+pr.id+'">Open</button>')+
+      '<button class="icon-btn" data-edit-prog="'+pr.id+'" title="Rename / mark complete">'+editSvg()+'</button>'+
+      (j.programmes.length>1 && !cur?'<button class="icon-btn" data-del-prog="'+pr.id+'" title="Delete programme">'+trashSvg()+'</button>':'')+
+    '</div>';
+  }).join('');
+  openModal("Programmes — "+jobDisplayName(j), '<div class="job-list">'+list+'</div><p style="font-size:12px; color:var(--text-muted); margin:10px 0 0;">Each programme has its own activities, revisions (starting at Rev 01), droplines and progress reports. The Labour tab uses whichever programme is open on each job.</p>', [
+    {label:"Close", cls:"btn", action:closeModal},
+    {label:"+ New programme", cls:"btn btn-primary", action:openNewProgrammeModal}
+  ]);
+  document.querySelectorAll("[data-open-prog]").forEach(b=>b.addEventListener("click", ()=>switchProgramme(b.dataset.openProg)));
+  document.querySelectorAll("[data-edit-prog]").forEach(b=>b.addEventListener("click", ()=>openEditProgrammeModal(b.dataset.editProg)));
+  document.querySelectorAll("[data-del-prog]").forEach(b=>b.addEventListener("click", ()=>{
+    const pr = j.programmes.find(x=>x.id===b.dataset.delProg);
+    openModal("Delete programme?", '<p style="font-size:13px; color:var(--text-muted);">This permanently deletes <b>'+esc(pr.name)+'</b> on '+esc(jobDisplayName(j))+', with its revisions and progress reports. This can\'t be undone.</p>', [
+      {label:"Cancel", cls:"btn", action:openProgrammesModal},
+      {label:"Delete programme", cls:"btn btn-danger", action:()=>{
+        try{ localStorage.removeItem(progKey(j.id, pr.id)); }catch(e){}
+        j.programmes = j.programmes.filter(x=>x.id!==pr.id);
+        saveWorkspace(); renderTopMeta(); openProgrammesModal(); toast("Programme deleted");
+      }}
+    ]);
+  }));
+}
+function openEditProgrammeModal(progId){
+  const j = currentJob(), pr = j.programmes.find(x=>x.id===progId);
+  if(!pr) return;
+  const body = '<div class="field"><label for="epName">Programme name</label><input id="epName" type="text" value="'+esc(pr.name)+'"></div>'+
+    '<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600;"><input type="checkbox" id="epDone"'+(pr.status==="complete"?" checked":"")+'> Programme complete</label>';
+  openModal("Edit programme", body, [
+    {label:"Cancel", cls:"btn", action:openProgrammesModal},
+    {label:"Save", cls:"btn btn-primary", action:()=>{
+      const n = document.getElementById("epName").value.trim();
+      if(!n){ toast("Enter a programme name"); return; }
+      pr.name = n; pr.status = document.getElementById("epDone").checked ? "complete" : "active";
+      saveWorkspace(); renderTopMeta(); openProgrammesModal();
+    }}
+  ]);
+}
+function openNewProgrammeModal(){
+  const j = currentJob(), cur = currentProgramme();
+  const n = j.programmes.length+1;
+  const body =
+    '<div class="field"><label for="npName">Programme name</label><input id="npName" type="text" value="Programme '+n+'" placeholder="e.g. Phase 2 – Plots 11-24"></div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label for="npStart">Programme start</label><input id="npStart" type="date" value="'+toISO(new Date())+'"></div>'+
+      '<div class="field"><label for="npFinish">Planned completion</label><input id="npFinish" type="date" value="'+toISO(new Date())+'"></div>'+
+    '</div>'+
+    '<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600; margin-bottom:8px;"><input type="checkbox" id="npWps" checked> Copy the work packages from '+esc(cur.name)+' (no activities)</label>'+
+    '<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600;"><input type="checkbox" id="npDone"'+(cur.status==="complete"?" checked disabled":" checked")+'> Mark '+esc(cur.name)+' as complete</label>'+
+    '<p style="font-size:12px; color:var(--text-muted); margin:12px 0 0;">The new programme starts at Rev 01. Job details, company details and labour trades are carried over. '+esc(cur.name)+' is kept, with its revisions and progress reports, and can be reopened from the programme list.</p>';
+  openModal("New programme on "+jobDisplayName(j), body, [
+    {label:"Cancel", cls:"btn", action:openProgrammesModal},
+    {label:"Create programme", cls:"btn btn-primary", action:()=>{
+      const name = document.getElementById("npName").value.trim();
+      if(!name){ toast("Enter a programme name"); return; }
+      const start = document.getElementById("npStart").value || toISO(new Date());
+      let finish = document.getElementById("npFinish").value || start;
+      if(toDate(finish)<toDate(start)) finish = start;
+      const st = defaultState();
+      st.project = Object.assign(clone(state.project), {programmeStart:start, plannedCompletion:finish});
+      st.company = clone(state.company);
+      st.labourRoles = clone(state.labourRoles);
+      st.revNumberBase1 = true;
+      st.revisions[0].plannedCompletion = finish; st.revisions[0].forecastCompletion = finish;
+      if(document.getElementById("npWps").checked){
+        const map = {};
+        state.workPackages.forEach(w=>{ map[w.id] = uid("wp"); });
+        st.workPackages = state.workPackages.map(w=>Object.assign(clone(w), {id:map[w.id], parentId:w.parentId?(map[w.parentId]||null):null, expanded:true}));
+      }
+      if(document.getElementById("npDone").checked) cur.status = "complete";
+      const id = uid("prog");
+      try{ localStorage.setItem(progKey(j.id, id), JSON.stringify(st)); }catch(e){}
+      j.programmes.push({id, name, status:"active", created:toISO(new Date())});
+      saveWorkspace();
+      switchProgramme(id, true);
+      toast(name+" created at Rev 01");
+    }}
+  ]);
+  setTimeout(()=>{ const el=document.getElementById("npName"); if(el){ el.focus(); el.select(); } }, 30);
 }
 
 /* ============================================================
@@ -2073,74 +2201,41 @@ function setAlloc(empId, wkISO, val){
 }
 function activeEmployees(){ return ws.employees.filter(e=>e.active!==false); }
 /* people of a trade allocated to a job in a week (used by the Dashboard lookahead too) */
-function allocatedCount(jobId, wkISO, trade, dayISO){ return activeEmployees().filter(e=>e.trade===trade && allocOf(e.id,wkISO)===jobId && !(dayISO && leaveOn(e.id,dayISO))).length; }
-/* ---- Leave: date ranges per employee (annual leave, sick, training…) ---- */
-const LEAVE_TYPES = ["Annual leave","Sick","Training","Other"];
-function leaveOn(empId, dayISO){ const d = toDate(dayISO); return (ws.leave||[]).find(l=>l.empId===empId && d>=toDate(l.start) && d<=toDate(l.end)) || null; }
-function leaveWorkingDays(l){ let n=0, d=toDate(l.start); const e=toDate(l.end); while(d<=e){ if(isWorkingDay(d)) n++; d=addDays(d,1); } return n; }
-function dayShort(dd){ const d=toDate(dd); return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]; }
-function dailyNeed(prog, dd){
-  const need = {}; if(!prog) return need;
-  const dt = toDate(dd);
-  (prog.activities||[]).forEach(a=>{
-    if(activityStage(a)==="complete") return;
-    if(dt < toDate(a.plannedStart) || dt > toDate(activityForecastFinish(a))) return;
-    (a.labour||[]).forEach(l=>{ need[l.roleName] = (need[l.roleName]||0) + (Number(l.qty)||0); });
-  });
-  return need;
-}
+function allocatedCount(jobId, wkISO, trade){ return activeEmployees().filter(e=>e.trade===trade && allocOf(e.id,wkISO)===jobId).length; }
 
 function renderLabour(){
   if(!lbFromISO) lbFromISO = mondayOfISO(toISO(new Date()));
-  if(!ws.leave) ws.leave = [];
   document.querySelectorAll("#lbWeeksSeg button").forEach(b=>b.classList.toggle("active", Number(b.dataset.weeks)===lbWeeks));
   const weeks = []; for(let i=0;i<lbWeeks;i++) weeks.push(toISO(addDays(toDate(lbFromISO), i*7)));
   const trades = allTrades();
   const emps = activeEmployees();
   const progs = {}; ws.jobs.forEach(j=>{ progs[j.id] = getJobProgramme(j.id); });
-  const wdays = {}; weeks.forEach(w=>{ wdays[w] = weekDays(w); });
 
-  // Per day: need (from each job's programme) vs people allocated to that job that week and not on leave that day.
-  // A week is short if ANY working day is short; heavy only if every working day has people to spare.
-  const dNeed = {}; // dNeed[job][day][trade]
-  ws.jobs.forEach(j=>{ dNeed[j.id] = {}; weeks.forEach(w=>wdays[w].forEach(dd=>{ dNeed[j.id][dd] = dailyNeed(progs[j.id], dd); })); });
-  const cell = {}; // cell[job][week][trade] = {n, a, gap, extra, days:[...short day labels]}
-  const spare = {}, off = {}, onLeave = {};
-  weeks.forEach(w=>{ spare[w] = {}; off[w] = 0; onLeave[w] = 0; });
-  ws.jobs.forEach(j=>{ cell[j.id] = {}; weeks.forEach(w=>{
-    cell[j.id][w] = {};
-    trades.forEach(t=>{
-      const staff = emps.filter(e=>e.trade===t && allocOf(e.id,w)===j.id);
-      let n=0, gap=0, extra=Infinity, aMin=staff.length, shortDays=[];
-      wdays[w].forEach(dd=>{
-        const need = dNeed[j.id][dd][t]||0;
-        const avail = staff.filter(e=>!leaveOn(e.id,dd)).length;
-        n = Math.max(n, need);
-        if(need>avail){ gap = Math.max(gap, need-avail); shortDays.push(dayShort(dd)); }
-        extra = Math.min(extra, avail-need);
-        if(need>0 || avail<aMin) aMin = Math.min(aMin, avail);
-      });
-      if(!wdays[w].length) extra = staff.length;
-      if(n || staff.length) cell[j.id][w][t] = {n, a:staff.length, avail:aMin, gap, extra:Math.max(0,extra===Infinity?0:extra), shortDays, leaveHit: aMin<staff.length};
+  // need / allocated / spare per job, week, trade
+  const need = {}, alloc = {}, spare = {}, off = {};
+  ws.jobs.forEach(j=>{ need[j.id] = {}; alloc[j.id] = {}; weeks.forEach(w=>{ need[j.id][w] = weeklyNeed(progs[j.id], w); alloc[j.id][w] = {}; }); });
+  weeks.forEach(w=>{ spare[w] = {}; off[w] = 0; });
+  emps.forEach(e=>{
+    weeks.forEach(w=>{
+      const a = allocOf(e.id, w);
+      if(a==="off") off[w]++;
+      else if(a && alloc[a]) alloc[a][w][e.trade] = (alloc[a][w][e.trade]||0)+1;
+      else spare[w][e.trade] = (spare[w][e.trade]||0)+1;
     });
-  }); });
-  emps.forEach(e=>weeks.forEach(w=>{
-    const a = allocOf(e.id,w);
-    const fullLeave = wdays[w].length && wdays[w].every(dd=>leaveOn(e.id,dd));
-    if(fullLeave){ onLeave[w]++; return; }
-    if(a==="off") off[w]++;
-    else if(!a || !cell[a]) spare[w][e.trade] = (spare[w][e.trade]||0)+1;
-  }));
-  const C = (j,w,t) => (cell[j] && cell[j][w] && cell[j][w][t]) || {n:0,a:0,avail:0,gap:0,extra:0,shortDays:[]};
+  });
 
   // stats for the first week shown
   const w0 = weeks[0];
   let shortJobs = 0, heavyJobs = 0, shortBy = 0;
-  ws.jobs.forEach(j=>{ let sh=false, hv=false; trades.forEach(t=>{ const c=C(j.id,w0,t); if(c.gap){ sh=true; shortBy+=c.gap; } if(c.extra) hv=true; }); if(sh) shortJobs++; if(hv) heavyJobs++; });
+  ws.jobs.forEach(j=>{
+    let sh=false, hv=false;
+    trades.forEach(t=>{ const n=need[j.id][w0][t]||0, a=alloc[j.id][w0][t]||0; if(a<n){ sh=true; shortBy+=n-a; } if(a>n) hv=true; });
+    if(sh) shortJobs++; if(hv) heavyJobs++;
+  });
   const spare0 = Object.values(spare[w0]).reduce((x,y)=>x+y,0);
   document.getElementById("lbStats").innerHTML =
     stat("Week commencing", fmtDate(w0), lbWeeks+" weeks shown") +
-    stat("Employees", emps.length, (emps.length-spare0-off[w0]-onLeave[w0])+" allocated · "+onLeave[w0]+" on leave · "+off[w0]+" off") +
+    stat("Employees", emps.length, (emps.length-spare0-off[w0])+" allocated · "+off[w0]+" off") +
     '<div class="stat-card"><span class="stat-label">Unallocated this week</span><span class="stat-value" style="color:'+(spare0?"var(--blue)":"var(--text)")+';">'+spare0+'</span><span class="stat-sub">'+(spare0?"Available to put on a job":"Everyone is placed")+'</span></div>'+
     '<div class="stat-card"><span class="stat-label">Jobs short this week</span><span class="stat-value" style="color:'+(shortJobs?"var(--amber)":"var(--green)")+';">'+shortJobs+'</span><span class="stat-sub">'+(shortJobs? shortBy+" operative"+(shortBy===1?"":"s")+" short in total" : "All jobs covered")+'</span></div>'+
     '<div class="stat-card"><span class="stat-label">Jobs heavy this week</span><span class="stat-value" style="color:'+(heavyJobs?"var(--blue)":"var(--text)")+';">'+heavyJobs+'</span><span class="stat-sub">More people than the programme needs</span></div>';
@@ -2148,39 +2243,37 @@ function renderLabour(){
   // ---- balance table ----
   const wkHead = '<tr><th class="sticky">Job / trade</th>'+weeks.map(w=>'<th class="day-h">w/c<b>'+fmtDateShort(w)+'</b></th>').join('')+'</tr>';
   let bal = '<table class="la-table lb-table"><thead>'+wkHead+'</thead><tbody>';
-  function cellHtml(c){
-    if(!c.n && !c.a) return '<td class="cell none">·</td>';
-    const cls = c.gap ? "short" : c.extra ? "heavy" : "right";
-    const note = c.gap ? c.gap+" short"+(c.shortDays.length && c.shortDays.length<5 ? " "+c.shortDays.join(", ") : "") : c.extra ? c.extra+" heavy" : "right";
-    const tip = c.a+" allocated"+(c.leaveHit?" (some on leave this week)":"")+" / "+c.n+" needed on the busiest day"+(c.gap?" — short on "+c.shortDays.join(", "):"");
-    return '<td class="cell '+cls+'" title="'+esc(tip)+'">'+c.a+' / '+c.n+(c.leaveHit?' <span class="lv-flag" title="Someone allocated is on leave this week">L</span>':'')+'<small>'+esc(note)+'</small></td>';
+  function cellFor(n, a){
+    if(!n && !a) return '<td class="cell none">·</td>';
+    const cls = a<n ? "short" : a>n ? "heavy" : "right";
+    const note = a<n ? (n-a)+" short" : a>n ? (a-n)+" heavy" : "right";
+    return '<td class="cell '+cls+'" title="'+a+' allocated / '+n+' needed">'+a+' / '+n+'<small>'+note+'</small></td>';
   }
   ws.jobs.forEach(j=>{
-    const jobTrades = trades.filter(t=> weeks.some(w=> cell[j.id][w][t]));
+    const jobTrades = trades.filter(t=> weeks.some(w=> (need[j.id][w][t]||0) || (alloc[j.id][w][t]||0)));
     bal += '<tr class="job-row"><td class="sticky"><span class="job-dot" style="display:inline-block; vertical-align:middle; margin-right:7px; background:'+j.colour+';"></span>'+esc(jobDisplayName(j))+(j.id===ws.currentJobId?' <span style="font-size:10.5px; color:var(--text-muted); font-weight:600;">(open)</span>':'')+'</td>'+
-      weeks.map(w=>{ const cs = jobTrades.map(t=>C(j.id,w,t)); const sum = {n:cs.reduce((x,c)=>x+c.n,0), a:cs.reduce((x,c)=>x+c.a,0), gap:cs.reduce((x,c)=>x+c.gap,0), extra:cs.reduce((x,c)=>x+c.extra,0), shortDays:[], leaveHit:cs.some(c=>c.leaveHit)};
-        if(sum.gap) sum.extra = 0; return cellHtml(sum); }).join('')+'</tr>';
+      weeks.map(w=>{ const n=jobTrades.reduce((x,t)=>x+(need[j.id][w][t]||0),0), a=jobTrades.reduce((x,t)=>x+(alloc[j.id][w][t]||0),0); return cellFor(n,a); }).join('')+'</tr>';
     if(!jobTrades.length) bal += '<tr class="trade-row"><td class="sticky" colspan="'+(weeks.length+1)+'">No labour needed or allocated in these weeks'+(progs[j.id] && !(progs[j.id].activities||[]).length ? " — programme has no activities yet":"")+'</td></tr>';
-    jobTrades.forEach(t=>{ bal += '<tr class="trade-row"><td class="sticky">'+esc(t)+'</td>'+weeks.map(w=>cellHtml(C(j.id,w,t))).join('')+'</tr>'; });
+    jobTrades.forEach(t=>{
+      bal += '<tr class="trade-row"><td class="sticky">'+esc(t)+'</td>'+weeks.map(w=>cellFor(need[j.id][w][t]||0, alloc[j.id][w][t]||0)).join('')+'</tr>';
+    });
   });
   const spareTrades = trades.filter(t=>weeks.some(w=>spare[w][t]));
-  if(spareTrades.length || weeks.some(w=>off[w]||onLeave[w])){
-    bal += '<tr class="job-row"><td class="sticky">Unallocated / leave / off</td>'+weeks.map(w=>{ const n=Object.values(spare[w]).reduce((x,y)=>x+y,0); return '<td class="cell '+(n?"heavy":"none")+'">'+(n?n+' spare':'·')+((onLeave[w]||off[w])?'<small style="color:var(--text-muted);">'+[onLeave[w]?onLeave[w]+' leave':'', off[w]?off[w]+' off':''].filter(Boolean).join(' · ')+'</small>':'')+'</td>'; }).join('')+'</tr>';
+  if(spareTrades.length || weeks.some(w=>off[w])){
+    bal += '<tr class="job-row"><td class="sticky">Unallocated / off</td>'+weeks.map(w=>{ const n=Object.values(spare[w]).reduce((x,y)=>x+y,0); return '<td class="cell '+(n?"heavy":"none")+'">'+(n?n+' spare':'·')+(off[w]?'<small style="color:var(--text-muted);">'+off[w]+' off</small>':'')+'</td>'; }).join('')+'</tr>';
     spareTrades.forEach(t=>{ bal += '<tr class="trade-row"><td class="sticky">'+esc(t)+'</td>'+weeks.map(w=>'<td class="cell '+(spare[w][t]?"heavy":"none")+'">'+(spare[w][t]||"·")+'</td>').join('')+'</tr>'; });
   }
   bal += '</tbody></table>';
   document.getElementById("lbBalance").innerHTML = bal;
 
   // ---- suggested moves: fill shortfalls from spare people first, then from heavy jobs ----
-  const available = (e,w) => !(wdays[w].length && wdays[w].every(dd=>leaveOn(e.id,dd)));
   const moves = [];
   weeks.forEach(w=>{
     trades.forEach(t=>{
-      const shorts = ws.jobs.map(j=>({j, gap:C(j.id,w,t).gap})).filter(x=>x.gap>0);
+      const shorts = ws.jobs.map(j=>({j, gap:(need[j.id][w][t]||0)-(alloc[j.id][w][t]||0)})).filter(x=>x.gap>0);
       if(!shorts.length) return;
-      // spare = unallocated and free on the days that job is short
-      const spares = emps.filter(e=>e.trade===t && !allocOf(e.id,w) && available(e,w));
-      const heavy = ws.jobs.map(j=>({j, extra:C(j.id,w,t).extra})).filter(x=>x.extra>0);
+      const spares = emps.filter(e=>e.trade===t && !allocOf(e.id,w));
+      const heavy = ws.jobs.map(j=>({j, extra:(alloc[j.id][w][t]||0)-(need[j.id][w][t]||0)})).filter(x=>x.extra>0);
       const used = new Set();
       shorts.forEach(sh=>{
         for(let k=0;k<sh.gap;k++){
@@ -2188,7 +2281,7 @@ function renderLabour(){
           if(sp){ used.add(sp.id); moves.push({w, t, emp:sp, from:null, to:sh.j, gap:sh.gap}); continue; }
           const hv = heavy.find(h=>h.extra>0);
           if(!hv) break;
-          const cand = emps.find(e=>e.trade===t && allocOf(e.id,w)===hv.j.id && !used.has(e.id) && available(e,w));
+          const cand = emps.find(e=>e.trade===t && allocOf(e.id,w)===hv.j.id && !used.has(e.id));
           if(!cand) break;
           used.add(cand.id); hv.extra--;
           moves.push({w, t, emp:cand, from:hv.j, to:sh.j, gap:sh.gap, fromExtra:hv.extra+1});
@@ -2198,9 +2291,9 @@ function renderLabour(){
   });
   const shortNoFix = [];
   weeks.forEach(w=>trades.forEach(t=>ws.jobs.forEach(j=>{
-    const c = C(j.id,w,t);
+    const gap=(need[j.id][w][t]||0)-(alloc[j.id][w][t]||0);
     const fixes = moves.filter(m=>m.w===w && m.t===t && m.to.id===j.id).length;
-    if(c.gap-fixes>0) shortNoFix.push({w,t,j,gap:c.gap-fixes, leave:c.leaveHit});
+    if(gap-fixes>0) shortNoFix.push({w,t,j,gap:gap-fixes});
   })));
   let mv = '';
   if(!ws.employees.length){
@@ -2213,7 +2306,7 @@ function renderLabour(){
               : 'Put <b>'+esc(m.emp.name)+'</b> ('+esc(m.t)+', unallocated) on <b>'+esc(jobDisplayName(m.to))+'</b> <span class="mv-short">('+m.gap+' short)</span>')+
       '</span><button class="btn btn-sm" data-mv="'+i+'" data-mode="week">This week</button><button class="btn btn-sm btn-primary" data-mv="'+i+'" data-mode="on">This week onward</button></div>').join('')+
       (moves.length>15?'<p class="lb-empty">+ '+(moves.length-15)+' more — work through these first and the list will update.</p>':'')+
-      shortNoFix.slice(0,8).map(x=>'<div class="move-item"><span class="mv-text"><span class="mv-wk">w/c '+fmtDateShort(x.w)+'</span><b>'+esc(jobDisplayName(x.j))+'</b> is <span class="mv-short">'+x.gap+' '+esc(x.t)+' short</span>'+(x.leave?' (someone is on leave)':'')+' and there\'s nobody spare or heavy to move — you\'ll need to bring someone in or re-programme.</span></div>').join('')+
+      shortNoFix.slice(0,8).map(x=>'<div class="move-item"><span class="mv-text"><span class="mv-wk">w/c '+fmtDateShort(x.w)+'</span><b>'+esc(jobDisplayName(x.j))+'</b> is <span class="mv-short">'+x.gap+' '+esc(x.t)+' short</span> and there\'s nobody spare or heavy to move — you\'ll need to bring someone in or re-programme.</span></div>').join('')+
       '</div>';
   }
   document.getElementById("lbMoves").innerHTML = mv;
@@ -2222,12 +2315,14 @@ function renderLabour(){
     const fromVal = m.from ? m.from.id : "";
     setAlloc(m.emp.id, m.w, m.to.id);
     if(b.dataset.mode==="on"){
-      // carry the move forward through the following weeks shown, wherever they were still on the same job
-      // (or unallocated) — but only for weeks where the job they're going to is still short of that trade
-      const added = {};
+      // carry the move forward through the following weeks shown, wherever they were still on the same job (or unallocated)
+      // — but only for weeks where the job they're going to still needs that trade
       weeks.filter(w=>toDate(w)>toDate(m.w)).forEach(w=>{
-        const stillShort = C(m.to.id,w,m.t).gap - (added[w]||0) > 0;
-        if(allocOf(m.emp.id,w)===fromVal && stillShort && available(m.emp,w)){ setAlloc(m.emp.id, w, m.to.id); added[w]=(added[w]||0)+1; }
+        const stillShort = (need[m.to.id][w][m.t]||0) > (alloc[m.to.id][w][m.t]||0);
+        if(allocOf(m.emp.id,w)===fromVal && stillShort){
+          setAlloc(m.emp.id, w, m.to.id);
+          alloc[m.to.id][w][m.t] = (alloc[m.to.id][w][m.t]||0)+1;
+        }
       });
     }
     saveState(); renderLabour();
@@ -2235,7 +2330,7 @@ function renderLabour(){
   }));
 
   // ---- allocation board, grouped by gang ----
-  const opts = sel => '<option value=""'+(sel===""?" selected":"")+'>— Unallocated</option>'+ws.jobs.map(j=>'<option value="'+j.id+'"'+(sel===j.id?" selected":"")+'>'+esc(jobDisplayName(j))+'</option>').join('')+'<option value="off"'+(sel==="off"?" selected":"")+'>Off (not on a job)</option>';
+  const opts = sel => '<option value=""'+(sel===""?" selected":"")+'>— Unallocated</option>'+ws.jobs.map(j=>'<option value="'+j.id+'"'+(sel===j.id?" selected":"")+'>'+esc(jobDisplayName(j))+'</option>').join('')+'<option value="off"'+(sel==="off"?" selected":"")+'>Off / holiday</option>';
   const colourOf = v => { const j = ws.jobs.find(x=>x.id===v); return j ? j.colour : v==="off" ? "#8B968E" : "var(--border)"; };
   let board = '';
   if(!ws.employees.length){
@@ -2256,12 +2351,7 @@ function renderLabour(){
       }
       members.forEach(e=>{
         board += '<tr'+(e.active===false?' style="opacity:.5;"':'')+'><td class="sticky"><button class="emp-name" data-edit-emp="'+e.id+'">'+esc(e.name)+'</button><span class="emp-trade">'+esc(e.trade||"No trade")+(e.active===false?" · inactive":"")+'</span></td>'+
-          weeks.map(w=>{ const v = allocOf(e.id,w);
-            const lvDays = wdays[w].filter(dd=>leaveOn(e.id,dd));
-            const full = wdays[w].length && lvDays.length===wdays[w].length;
-            const lvType = lvDays.length ? leaveOn(e.id,lvDays[0]).type : "";
-            const lvNote = lvDays.length ? '<span class="lv-note" title="'+esc(lvType)+'">'+esc(full ? lvType+" all week" : lvType+" "+lvDays.map(dayShort).join(", "))+'</span>' : '';
-            return '<td class="selcell"><select class="lb-sel'+(v?"":" unalloc")+(full?" on-leave":"")+'" data-emp="'+e.id+'" data-wk="'+w+'" style="border-left-color:'+colourOf(v)+';"'+(e.active===false?" disabled":"")+'>'+opts(v)+'</select>'+lvNote+'</td>'; }).join('')+'</tr>';
+          weeks.map(w=>{ const v = allocOf(e.id,w); return '<td class="selcell"><select class="lb-sel'+(v?"":" unalloc")+'" data-emp="'+e.id+'" data-wk="'+w+'" style="border-left-color:'+colourOf(v)+';"'+(e.active===false?" disabled":"")+'>'+opts(v)+'</select></td>'; }).join('')+'</tr>';
       });
     });
     board += '</tbody></table>';
@@ -2276,22 +2366,6 @@ function renderLabour(){
   }));
   document.querySelectorAll("#lbBoard [data-edit-emp]").forEach(b=>b.addEventListener("click", ()=>openEmployeeModal(b.dataset.editEmp)));
   const add2 = document.getElementById("lbAddEmp2"); if(add2) add2.addEventListener("click", ()=>openEmployeeModal());
-
-  // ---- employees list ----
-  const todayISO = toISO(new Date());
-  const empRows = ws.employees.slice().sort((a,b)=> (a.active===false)-(b.active===false) || (!a.gang)-(!b.gang) || (a.gang||"").localeCompare(b.gang||"") || a.name.localeCompare(b.name)).map(e=>{
-    const upcoming = (ws.leave||[]).filter(l=>l.empId===e.id && toDate(l.end)>=toDate(todayISO)).sort((a,b)=>toDate(a.start)-toDate(b.start));
-    return '<tr'+(e.active===false?' style="opacity:.55;"':'')+'><td style="font-weight:700;">'+esc(e.name)+'</td><td>'+esc(e.trade||"—")+'</td><td>'+esc(e.gang||"—")+'</td><td>'+esc(e.phone||"—")+'</td>'+
-      '<td>'+(upcoming.length ? upcoming.slice(0,3).map(l=>'<span class="lv-chip" data-edit-leave="'+l.id+'" title="Click to change or cancel">'+esc(l.type)+': '+fmtDateShort(l.start)+(l.end!==l.start?' – '+fmtDateShort(l.end):'')+'</span>').join('')+(upcoming.length>3?' +'+(upcoming.length-3):'') : '<span style="color:var(--text-faint);">None booked</span>')+'</td>'+
-      '<td>'+(e.active===false?'Left':'Employed')+'</td>'+
-      '<td style="white-space:nowrap; text-align:right;"><button class="btn btn-sm" data-book-leave="'+e.id+'">Book leave</button> <button class="btn btn-sm" data-edit-emp="'+e.id+'">Edit</button></td></tr>';
-  }).join('');
-  document.getElementById("lbEmpTable").innerHTML = ws.employees.length
-    ? '<thead><tr><th>Name</th><th>Trade</th><th>Gang</th><th>Phone</th><th>Upcoming leave</th><th>Status</th><th></th></tr></thead><tbody>'+empRows+'</tbody>'
-    : '<tbody><tr><td style="color:var(--text-muted);">No employees yet — add them with + Employee.</td></tr></tbody>';
-  document.querySelectorAll("#lbEmpTable [data-edit-emp]").forEach(b=>b.addEventListener("click", ()=>openEmployeeModal(b.dataset.editEmp)));
-  document.querySelectorAll("#lbEmpTable [data-book-leave]").forEach(b=>b.addEventListener("click", ()=>openLeaveModal(b.dataset.bookLeave)));
-  document.querySelectorAll("#lbEmpTable [data-edit-leave]").forEach(b=>b.addEventListener("click", ()=>{ const l=(ws.leave||[]).find(x=>x.id===b.dataset.editLeave); if(l) openLeaveModal(l.empId, l.id); }));
   const firstCol = document.querySelector("#lbBalance th.sticky"); // keep sticky widths tidy
   renderTopMeta();
 }
@@ -2304,13 +2378,10 @@ function openEmployeeModal(id){
     '<div class="field"><label for="empTrade">Trade</label><select id="empTrade">'+(trades.length?"":'<option value="">Add trades in Settings first</option>')+trades.map(t=>'<option'+(e&&e.trade===t?" selected":"")+'>'+esc(t)+'</option>').join('')+'</select></div>'+
     '<div class="field"><label for="empGang">Gang (optional)</label><input id="empGang" type="text" list="gangList" value="'+(e?esc(e.gang||""):"")+'" placeholder="e.g. Gang 1 – Dave"><datalist id="gangList">'+gangs.map(g=>'<option value="'+esc(g)+'">').join('')+'</datalist></div>'+
     '<div class="field"><label for="empPhone">Phone (optional)</label><input id="empPhone" type="text" value="'+(e?esc(e.phone||""):"")+'"></div>'+
-    (e?'<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600; margin-bottom:14px;"><input type="checkbox" id="empActive"'+(e.active!==false?" checked":"")+'> Currently employed (untick for leavers — keeps their history)</label>':'')+
-    (e?'<div class="field" style="margin-bottom:0;"><label>Leave booked</label><div class="lv-list">'+
-      ((ws.leave||[]).filter(l=>l.empId===e.id).sort((a,b)=>toDate(b.start)-toDate(a.start)).map(l=>'<div class="lv-row"><span class="lv-txt"><b>'+esc(l.type)+'</b> · '+fmtDate(l.start)+(l.end!==l.start?' – '+fmtDate(l.end):'')+' · '+leaveWorkingDays(l)+' day'+(leaveWorkingDays(l)===1?'':'s')+(l.note?' · '+esc(l.note):'')+'</span><button class="btn btn-sm" data-emp-leave="'+l.id+'">Change</button></div>').join('') || '<span style="font-size:12.5px; color:var(--text-muted);">None booked.</span>')+
-      '</div><button class="btn btn-sm" id="empBookLeave" type="button">+ Book leave</button></div>':'');
+    (e?'<label style="display:flex; align-items:center; gap:8px; font-size:12.8px; font-weight:600;"><input type="checkbox" id="empActive"'+(e.active!==false?" checked":"")+'> Currently employed (untick for leavers — keeps their history)</label>':'');
   const actions = [];
   if(e) actions.push({label:"Delete", cls:"btn btn-danger", action:()=>{
-    ws.employees = ws.employees.filter(x=>x.id!==e.id); delete ws.allocations[e.id]; ws.leave = (ws.leave||[]).filter(l=>l.empId!==e.id);
+    ws.employees = ws.employees.filter(x=>x.id!==e.id); delete ws.allocations[e.id];
     saveState(); closeModal(); renderLabour(); toast("Employee removed");
   }});
   actions.push({label:"Cancel", cls:"btn", action:closeModal});
@@ -2324,80 +2395,9 @@ function openEmployeeModal(id){
     saveState(); closeModal(); renderLabour(); toast(e?"Employee updated":"Employee added");
   }});
   openModal(e?"Edit employee":"Add employee", body, actions);
-  if(e){
-    const bl = document.getElementById("empBookLeave"); if(bl) bl.addEventListener("click", ()=>openLeaveModal(e.id));
-    document.querySelectorAll("[data-emp-leave]").forEach(b=>b.addEventListener("click", ()=>openLeaveModal(e.id, b.dataset.empLeave)));
-  }
   setTimeout(()=>{ const el=document.getElementById("empName"); if(el && !e) el.focus(); }, 30);
 }
 document.getElementById("lbAddEmp").addEventListener("click", ()=>openEmployeeModal());
-document.getElementById("lbAddEmp3").addEventListener("click", ()=>openEmployeeModal());
-document.getElementById("lbLeave").addEventListener("click", ()=>openLeaveModal());
-document.getElementById("lbGangs").addEventListener("click", openGangsModal);
-function openLeaveModal(empId, leaveId){
-  if(!ws.leave) ws.leave = [];
-  const l = leaveId ? ws.leave.find(x=>x.id===leaveId) : null;
-  const emps = ws.employees.filter(e=>e.active!==false || e.id===empId).slice().sort((a,b)=>a.name.localeCompare(b.name));
-  if(!emps.length){ toast("Add an employee first"); return; }
-  const today = toISO(new Date());
-  const body =
-    '<div class="field"><label for="lvEmp">Employee</label><select id="lvEmp">'+emps.map(e=>'<option value="'+e.id+'"'+((l?l.empId:empId)===e.id?" selected":"")+'>'+esc(e.name)+(e.trade?" — "+esc(e.trade):"")+'</option>').join('')+'</select></div>'+
-    '<div class="field"><label for="lvType">Type</label><select id="lvType">'+LEAVE_TYPES.map(t=>'<option'+(l&&l.type===t?" selected":"")+'>'+t+'</option>').join('')+'</select></div>'+
-    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><div class="field"><label for="lvStart">From</label><input id="lvStart" type="date" value="'+(l?l.start:today)+'"></div><div class="field"><label for="lvEnd">To (inclusive)</label><input id="lvEnd" type="date" value="'+(l?l.end:today)+'"></div></div>'+
-    '<div class="field"><label for="lvNote">Note (optional)</label><input id="lvNote" type="text" value="'+(l?esc(l.note||""):"")+'" placeholder="e.g. Approved by JL"></div>'+
-    '<p id="lvCount" style="font-size:12.5px; color:var(--text-muted); margin:0;"></p>';
-  const actions = [];
-  if(l) actions.push({label:"Cancel leave", cls:"btn btn-danger", action:()=>{ ws.leave = ws.leave.filter(x=>x.id!==l.id); saveState(); closeModal(); refreshLabourViews(); toast("Leave cancelled"); }});
-  actions.push({label:"Close", cls:"btn", action:closeModal});
-  actions.push({label: l?"Save":"Book leave", cls:"btn btn-primary", action:()=>{
-    const start = document.getElementById("lvStart").value, end = document.getElementById("lvEnd").value;
-    if(!start || !end){ toast("Pick the dates"); return; }
-    if(toDate(end)<toDate(start)){ toast("The end date is before the start date"); return; }
-    const emp = document.getElementById("lvEmp").value;
-    const clash = ws.leave.find(x=>x.empId===emp && x.id!==(l&&l.id) && !(toDate(x.end)<toDate(start) || toDate(x.start)>toDate(end)));
-    if(clash){ toast("Already booked off "+fmtDateShort(clash.start)+(clash.end!==clash.start?" – "+fmtDateShort(clash.end):"")); return; }
-    const rec = l || {id:uid("lv")};
-    rec.empId = emp; rec.type = document.getElementById("lvType").value; rec.start = start; rec.end = end; rec.note = document.getElementById("lvNote").value.trim();
-    if(!l) ws.leave.push(rec);
-    saveState(); closeModal(); refreshLabourViews();
-    const e = ws.employees.find(x=>x.id===emp);
-    toast((l?"Leave updated":"Leave booked")+" for "+(e?e.name:"employee")+" — "+leaveWorkingDays(rec)+" working day"+(leaveWorkingDays(rec)===1?"":"s"));
-  }});
-  openModal(l?"Change leave":"Book leave", body, actions);
-  const upd = ()=>{ const a=document.getElementById("lvStart").value, b=document.getElementById("lvEnd").value; const el=document.getElementById("lvCount"); if(!el) return;
-    el.textContent = (a&&b&&toDate(b)>=toDate(a)) ? leaveWorkingDays({start:a,end:b})+" working day(s) — weekends and bank holidays aren't counted." : ""; };
-  ["lvStart","lvEnd"].forEach(id=>document.getElementById(id).addEventListener("change", ()=>{
-    if(id==="lvStart"){ const a=document.getElementById("lvStart"), b=document.getElementById("lvEnd"); if(a.value && (!b.value || toDate(b.value)<toDate(a.value))) b.value=a.value; }
-    upd(); }));
-  upd();
-}
-function openGangsModal(){
-  const gangs = [...new Set(ws.employees.map(e=>(e.gang||"").trim()).filter(Boolean))].sort();
-  const body = gangs.length
-    ? '<p style="font-size:12.5px; color:var(--text-muted); margin:0 0 10px;">Rename a gang here and everyone in it moves with it. To move one person to another gang, use Edit on their row.</p>'+
-      gangs.map((g,i)=>'<div class="gang-edit"><input type="text" data-gang-old="'+esc(g)+'" value="'+esc(g)+'"><span>'+ws.employees.filter(e=>(e.gang||"").trim()===g).length+' people</span><button class="btn btn-sm" data-gang-clear="'+esc(g)+'" title="Remove everyone from this gang">Disband</button></div>').join('')
-    : '<p style="font-size:12.5px; color:var(--text-muted); margin:0;">No gangs yet. Give employees a gang name in their Edit box and it will appear here.</p>';
-  openModal("Gangs", body, [
-    {label:"Close", cls:"btn", action:closeModal},
-    ...(gangs.length?[{label:"Save names", cls:"btn btn-primary", action:()=>{
-      document.querySelectorAll("[data-gang-old]").forEach(inp=>{
-        const oldN = inp.dataset.gangOld, newN = inp.value.trim();
-        if(newN && newN!==oldN) ws.employees.forEach(e=>{ if((e.gang||"").trim()===oldN) e.gang = newN; });
-      });
-      saveState(); closeModal(); refreshLabourViews(); toast("Gangs updated");
-    }}]:[])
-  ]);
-  document.querySelectorAll("[data-gang-clear]").forEach(b=>b.addEventListener("click", ()=>{
-    const g = b.dataset.gangClear;
-    ws.employees.forEach(e=>{ if((e.gang||"").trim()===g) e.gang = ""; });
-    saveState(); refreshLabourViews(); openGangsModal(); toast(g+" disbanded");
-  }));
-}
-function refreshLabourViews(){
-  const active = document.querySelector(".view.active");
-  if(active && active.id==="view-labour") renderLabour();
-  if(active && active.id==="view-dashboard") renderDashboard();
-}
 document.getElementById("lbPrev").addEventListener("click", ()=>{ lbFromISO = toISO(addDays(toDate(lbFromISO||mondayOfISO(toISO(new Date()))),-7)); renderLabour(); });
 document.getElementById("lbNext").addEventListener("click", ()=>{ lbFromISO = toISO(addDays(toDate(lbFromISO||mondayOfISO(toISO(new Date()))),7)); renderLabour(); });
 document.getElementById("lbToday").addEventListener("click", ()=>{ lbFromISO = mondayOfISO(toISO(new Date())); renderLabour(); });
@@ -2449,6 +2449,7 @@ function renderProgressView(){
     '<tbody>'+(rows||'<tr><td colspan="8" style="color:var(--text-muted);">No activities yet — add some in the Programme tab.</td></tr>')+'</tbody>';
 
   document.querySelectorAll("[data-update-progress]").forEach(el=>el.addEventListener("click", ()=> openProgressModal(el.dataset.updateProgress)));
+  renderProgressReports();
 }
 
 function openProgressModal(id){
@@ -2490,19 +2491,18 @@ function openProgressModal(id){
 function renderRevisions(){
   const rows = [...state.revisions].reverse().map(r=>
     '<tr><td class="rev-badge">REV '+String(r.number).padStart(2,"0")+'</td>'+
-    '<td>'+esc(r.label)+'</td>'+
     '<td class="tnum">'+fmtDate(r.date)+'</td>'+
     '<td class="tnum">'+(r.statusDate?fmtDate(r.statusDate):"—")+'</td>'+
     '<td class="tnum">'+fmtDate(r.plannedCompletion)+'</td>'+
     '<td class="tnum">'+fmtDate(r.forecastCompletion)+'</td>'+
     '<td>'+esc(r.issuedBy)+'</td>'+
     '<td style="white-space:nowrap;">'+
-      (r.snapshot? '<button class="btn" data-view-rev="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button>' : '<span style="font-size:11px; color:var(--text-muted);">No snapshot</span>')+
+      (r.snapshot? '<button class="btn" data-view-rev="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button>' : '<span style="font-size:11px; color:var(--text-muted);">'+(rev01Pending()?'Not issued yet':'No snapshot')+'</span>')+
       ' <button class="icon-btn" data-del-rev="'+r.id+'" title="Delete revision">'+trashSvg()+'</button>'+
     '</td></tr>'
   ).join('');
   document.getElementById("revTable").innerHTML =
-    '<thead><tr><th>Revision</th><th>Description</th><th>Date</th><th>Status date</th><th>Planned completion</th><th>Forecast completion</th><th>Issued by</th><th>Document</th></tr></thead>'+
+    '<thead><tr><th>Revision</th><th>Date</th><th>Status date</th><th>Planned completion</th><th>Forecast completion</th><th>Issued by</th><th>Document</th></tr></thead>'+
     '<tbody>'+rows+'</tbody>';
   document.querySelectorAll("[data-view-rev]").forEach(el=>el.addEventListener("click", ()=> viewRevision(el.dataset.viewRev)));
   document.querySelectorAll("[data-del-rev]").forEach(el=>el.addEventListener("click", ()=> deleteRevision(el.dataset.delRev)));
@@ -2511,7 +2511,7 @@ function deleteRevision(id){
   if(state.revisions.length<=1){ toast("You need at least one revision — can't delete the last one"); return; }
   const rev = state.revisions.find(r=>r.id===id);
   if(!rev) return;
-  openModal("Delete Rev "+String(rev.number).padStart(2,"0")+"?", '<p style="font-size:13px; color:var(--text-muted);">This removes "'+esc(rev.label)+'" from the revision history and renumbers the remaining revisions in order. This can\'t be undone.</p>', [
+  openModal("Delete Rev "+String(rev.number).padStart(2,"0")+"?", '<p style="font-size:13px; color:var(--text-muted);">This removes Rev '+String(rev.number).padStart(2,"0")+' from the revision history and renumbers the remaining revisions in order. This can\'t be undone.</p>', [
     {label:"Cancel", cls:"btn", action:closeModal},
     {label:"Delete", cls:"btn btn-danger", action:()=>{
       state.revisions = state.revisions.filter(r=>r.id!==id);
@@ -2521,8 +2521,23 @@ function deleteRevision(id){
   ]);
 }
 let issueReturnsTo = "programme";
-function issueRevision(){ issueReturnsTo="programme"; showView("issue"); }
+function issueRevision(){
+  const rev = currentRevision();
+  const changes = programmeChangesSince(rev);
+  if(changes && changes.length===0){
+    openModal("No programme changes since Rev "+pad2(rev.number),
+      '<p class="info-line">Activity dates and durations are the same as Rev '+pad2(rev.number)+' (issued '+fmtDate(rev.date)+'). A new revision is only needed when these change.</p>'+
+      '<p class="info-line" style="margin:0;">To issue an updated dropline, issue a <b>progress report</b> against Rev '+pad2(rev.number)+'.</p>',
+      [{label:"Cancel", cls:"btn", action:closeModal},
+       {label:"Issue revision anyway", cls:"btn", action:()=>{ closeModal(); startRevisionIssue(); }},
+       {label:"Issue progress report", cls:"btn btn-primary", action:()=>{ closeModal(); openProgressReportFlow(); }}]);
+    return;
+  }
+  startRevisionIssue();
+}
+function startRevisionIssue(){ issueCtx=null; issueReturnsTo="programme"; showView("issue"); }
 function viewRevision(id){
+  issueCtx = null;
   const rev = state.revisions.find(r=>r.id===id);
   if(!rev) return;
   if(!rev.snapshot){ toast("This revision was issued before snapshots were saved, so it can't be reprinted"); return; }
@@ -2533,10 +2548,17 @@ document.getElementById("issueBtn").addEventListener("click", issueRevision);
 document.getElementById("issueBtn2").addEventListener("click", issueRevision);
 document.getElementById("backFromIssue").addEventListener("click", ()=>showView(issueReturnsTo));
 document.getElementById("printBtn").addEventListener("click", ()=> window.print());
+document.querySelectorAll("#orientSeg [data-orient]").forEach(b=>b.addEventListener("click", ()=>{
+  if(b.dataset.orient===printOrientation()) return;
+  setPrintOrientation(b.dataset.orient);
+  renderIssuePreview(lastViewRev);
+}));
 document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
-  const nextNum = currentRevision().number+1;
-  state.revisions.push({
-    id:uid("rev"), number:nextNum, label:"Revision "+String(nextNum).padStart(2,"0"),
+  if(issueCtx && issueCtx.report && !issueCtx.saved){ saveProgressReport(issueCtx.report); return; }
+  const nextNum = nextRevisionNumber();
+  const firstIssue = rev01Pending();
+  const newRev = {
+    id: firstIssue ? state.revisions[0].id : uid("rev"), number:nextNum, label:"Revision "+String(nextNum).padStart(2,"0"),
     date: toISO(new Date()), statusDate: state.dropline.date,
     plannedCompletion: state.project.plannedCompletion, forecastCompletion: forecastCompletionISO(),
     issuedBy: state.project.projectManager,
@@ -2545,11 +2567,232 @@ document.getElementById("confirmIssueBtn").addEventListener("click", ()=>{
       activities: JSON.parse(JSON.stringify(state.activities)),
       project: JSON.parse(JSON.stringify(state.project))
     }
-  });
-  saveState();
+  };
+  if(firstIssue) state.revisions[0] = newRev; else state.revisions.push(newRev);
+  saveState(); renderTopMeta();
   toast("Revision "+String(nextNum).padStart(2,"0")+" issued");
   showView("revisions");
 });
+
+/* ============================================================
+   PROGRESS REPORTS — updated dropline against the current revision
+   A progress report never changes the revision. It prints the current
+   revision's bars (as issued) with the latest progress and a dropline
+   at the data date. Any activity behind at the data date has to be
+   given a reason before the report can be issued.
+   ============================================================ */
+let issueCtx = null; // {report, saved} while previewing a progress report
+const PROGRESS_FIELDS = ["percentComplete","actualStart","actualFinish","forecastFinishOverride"];
+const DELAY_FLAG_DAYS = 1; // flag when MORE than this many working days behind at the data date (ignores tasks just a day in)
+const DELAY_REASONS = ["Weather","Awaiting PC / client information","Design change / instruction","Late access / preceding works (other trades)","Services / unforeseen ground conditions","Plant or materials","Labour / resource (own)","Other"];
+const DELAY_RESPONSIBLE = ["CGC","Principal Contractor","Client","Third party","Neutral (e.g. weather)"];
+function pad2(n){ return String(n).padStart(2,"0"); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+/* What's changed in activity dates/durations since a revision was issued.
+   null = can't tell (revision has no snapshot). */
+function programmeChangesSince(rev){
+  if(!rev || !rev.snapshot) return null;
+  const snap = rev.snapshot.activities||[];
+  const changes = [];
+  state.activities.forEach(a=>{
+    const s = snap.find(x=>x.id===a.id);
+    if(!s){ changes.push("Added: "+a.name); return; }
+    if(s.plannedStart!==a.plannedStart || s.plannedFinish!==a.plannedFinish){
+      const d0 = calculateWorkingDays(s.plannedStart,s.plannedFinish), d1 = activityDuration(a);
+      changes.push(a.name+": "+fmtDateShort(s.plannedStart)+"–"+fmtDateShort(s.plannedFinish)+" → "+fmtDateShort(a.plannedStart)+"–"+fmtDateShort(a.plannedFinish)+(d0!==d1?" ("+d0+"d → "+d1+"d)":""));
+    }
+  });
+  snap.forEach(s=>{ if(!state.activities.some(a=>a.id===s.id)) changes.push("Removed: "+s.name); });
+  return changes;
+}
+
+/* The current revision as issued, with today's progress laid over it. */
+function buildReportSnapshot(){
+  const rev = currentRevision();
+  let workPackages, activities, project;
+  if(rev.snapshot){
+    workPackages = clone(rev.snapshot.workPackages);
+    activities = clone(rev.snapshot.activities).map(a=>{
+      const live = state.activities.find(x=>x.id===a.id);
+      if(live) PROGRESS_FIELDS.forEach(k=>{ a[k] = live[k]===undefined ? null : live[k]; });
+      return a;
+    });
+    project = Object.assign(clone(state.project), {programmeStart:rev.snapshot.project.programmeStart, plannedCompletion:rev.snapshot.project.plannedCompletion});
+  } else {
+    workPackages = clone(state.workPackages); activities = clone(state.activities); project = clone(state.project);
+  }
+  workPackages.forEach(w=>{ w.expanded = true; }); // every activity shows on the report
+  return {workPackages, activities, project};
+}
+
+/* How far each activity's dropline point sits behind the data date (working days). */
+function delayInfo(a, dataISO){
+  if(activityStage(a)==="complete") return null;
+  const dur = Math.max(1, activityDuration(a));
+  const pct = Math.max(0, Math.min(100, a.percentComplete||0));
+  const expected = toDate(dataISO)<toDate(a.plannedStart) ? 0 : Math.min(dur, calculateWorkingDays(a.plannedStart, dataISO));
+  const done = pct/100*dur;
+  const behind = Math.round((expected-done)*10)/10;
+  const finishVar = activityVarianceDays(a);
+  if(behind <= DELAY_FLAG_DAYS && finishVar <= 0) return null;
+  return { plannedPct: Math.round(expected/dur*100), actualPct: pct, daysBehind: Math.max(0,behind), finishVar: Math.max(0,finishVar) };
+}
+function computeDelays(snapshot, dataISO){
+  const prev = state.progressReports[state.progressReports.length-1];
+  const wpName = id=>{ const w=snapshot.workPackages.find(x=>x.id===id); return w?w.name:""; };
+  // follow programme order
+  const saved = {workPackages:state.workPackages, activities:state.activities};
+  state.workPackages = snapshot.workPackages; state.activities = snapshot.activities;
+  const ordered = buildRowList().filter(r=>r.type==="activity").map(r=>r.item);
+  state.workPackages = saved.workPackages; state.activities = saved.activities;
+  const out = [];
+  ordered.forEach(a=>{
+    const info = delayInfo(a, dataISO);
+    if(!info) return;
+    const carried = prev && (prev.delays||[]).find(d=>d.actId===a.id);
+    out.push(Object.assign({actId:a.id, name:a.name, wp:wpName(a.workPackageId),
+      reason: carried?carried.reason:"", responsible: carried?carried.responsible:"", note: carried?carried.note:"",
+      carriedFrom: carried?prev.number:null}, info));
+  });
+  return out;
+}
+
+function openProgressReportFlow(){
+  if(rev01Pending()){
+    openModal("Issue Rev 01 first", '<p class="info-line" style="margin:0;">Progress reports are issued against an issued revision. Rev 01 of this programme hasn\'t been issued yet — issue it first, then issue progress reports against it.</p>',
+      [{label:"Cancel", cls:"btn", action:closeModal},{label:"Issue Rev 01", cls:"btn btn-primary", action:()=>{ closeModal(); startRevisionIssue(); }}]);
+    return;
+  }
+  const rev = currentRevision();
+  const changes = programmeChangesSince(rev);
+  const defaultDate = (state.dropline && state.dropline.date) || toISO(new Date());
+  const nextNo = (state.progressReports.length ? state.progressReports[state.progressReports.length-1].number : 0)+1;
+  let warn = '';
+  if(changes===null && rev.number>1) warn = '<div class="warn-box">Rev '+pad2(rev.number)+' has no saved snapshot, so this report uses the current programme dates.</div>';
+  if(changes && changes.length){
+    warn = '<div class="warn-box"><b>'+changes.length+' change'+(changes.length===1?'':'s')+' to activity dates since Rev '+pad2(rev.number)+' was issued.</b> This report shows Rev '+pad2(rev.number)+' as issued, so these won\'t appear. If durations have changed, issue a new revision first.'+
+      '<ul>'+changes.slice(0,6).map(c=>'<li>'+esc(c)+'</li>').join('')+(changes.length>6?'<li>…and '+(changes.length-6)+' more</li>':'')+'</ul></div>';
+  }
+  const body =
+    '<p class="info-line">Progress Report '+pad2(nextNo)+' against <b>Rev '+pad2(rev.number)+'</b> (issued '+fmtDate(rev.date)+'). The revision stays as it is — only the progress and dropline update.</p>'+
+    warn+
+    '<div class="field-row">'+
+      '<div class="field"><label for="prDate">Data date (dropline)</label><input id="prDate" type="date" value="'+defaultDate+'"></div>'+
+      '<div class="field"><label for="prBy">Issued by</label><input id="prBy" type="text" value="'+esc(state.project.projectManager||"")+'"></div>'+
+    '</div>';
+  const actions = [{label:"Cancel", cls:"btn", action:closeModal}];
+  if(changes && changes.length) actions.push({label:"Issue revision instead", cls:"btn", action:()=>{ closeModal(); startRevisionIssue(); }});
+  actions.push({label:"Next", cls:"btn btn-primary", action:()=>{
+    const dataDate = document.getElementById("prDate").value;
+    if(!dataDate){ toast("Pick a data date"); return; }
+    const snapshot = buildReportSnapshot();
+    const report = {
+      id:uid("pr"), number:nextNo, revId:rev.id, revNumber:rev.number, revDate:rev.date,
+      dataDate, date:toISO(new Date()), issuedBy:document.getElementById("prBy").value.trim(),
+      snapshot, delays: computeDelays(snapshot, dataDate)
+    };
+    closeModal();
+    if(report.delays.length) openDelayReasonsModal(report);
+    else previewProgressReport(report);
+  }});
+  openModal("Issue progress report", body, actions);
+}
+
+function openDelayReasonsModal(report){
+  const opt = (list, val)=> '<option value="">Select…</option>'+list.map(x=>'<option'+(x===val?' selected':'')+'>'+esc(x)+'</option>').join('');
+  const items = report.delays.map((d,i)=>
+    '<div class="delay-item" data-i="'+i+'">'+
+      '<div class="delay-head"><b>'+esc(d.name)+'</b><span class="pill status-behind"><span class="pill-dot"></span>'+
+        (d.daysBehind>DELAY_FLAG_DAYS ? d.daysBehind+' day'+(d.daysBehind===1?'':'s')+' behind' : 'Late finish +'+d.finishVar+'d')+'</span></div>'+
+      '<div class="delay-meta">'+(d.wp?esc(d.wp)+' · ':'')+'Should be '+d.plannedPct+'% · actually '+d.actualPct+'%'+(d.finishVar>0?' · forecast finish +'+d.finishVar+' working day'+(d.finishVar===1?'':'s'):'')+'</div>'+
+      (d.carriedFrom?'<div class="delay-carry">Reason carried over from Progress Report '+pad2(d.carriedFrom)+' — confirm or update.</div>':'')+
+      '<div class="field-row">'+
+        '<div class="field"><label>Reason for delay</label><select data-f="reason">'+opt(DELAY_REASONS,d.reason)+'</select></div>'+
+        '<div class="field"><label>Responsible</label><select data-f="responsible">'+opt(DELAY_RESPONSIBLE,d.responsible)+'</select></div>'+
+      '</div>'+
+      '<div class="field"><label>Notes'+' <span style="font-weight:400;">(required for "Other")</span></label><textarea data-f="note" rows="2" placeholder="e.g. RFI 012 outstanding — invert levels to MH4 not confirmed">'+esc(d.note||"")+'</textarea></div>'+
+    '</div>').join('');
+  const body = '<p class="delay-intro">'+report.delays.length+' activit'+(report.delays.length===1?'y is':'ies are')+' more than '+DELAY_FLAG_DAYS+' working day behind (or forecast to finish late) at the data date ('+fmtDate(report.dataDate)+'). Give a reason for each before the report is issued. These print in the delay register at the end of the report.</p>'+items;
+  openModal("Delayed activities — Progress Report "+pad2(report.number), body, [
+    {label:"Back", cls:"btn", action:()=>{ closeModal(); openProgressReportFlow(); }},
+    {label:"Continue to report", cls:"btn btn-primary", action:()=>{
+      let missing = 0;
+      document.querySelectorAll("#modalRoot .delay-item").forEach(el=>{
+        const d = report.delays[Number(el.dataset.i)];
+        d.reason = el.querySelector('[data-f="reason"]').value;
+        d.responsible = el.querySelector('[data-f="responsible"]').value;
+        d.note = el.querySelector('[data-f="note"]').value.trim();
+        const bad = !d.reason || !d.responsible || (d.reason==="Other" && !d.note);
+        el.classList.toggle("missing", bad);
+        if(bad) missing++;
+      });
+      if(missing){
+        toast("Add a reason and responsible party for "+missing+" more activit"+(missing===1?"y":"ies"));
+        const first = document.querySelector("#modalRoot .delay-item.missing"); if(first) first.scrollIntoView({block:"center", behavior:"smooth"});
+        return;
+      }
+      closeModal(); previewProgressReport(report);
+    }}
+  ], {wide:true});
+}
+
+function previewProgressReport(report){
+  issueCtx = {report, saved:false};
+  issueReturnsTo = "progress";
+  showView("issue");
+}
+function saveProgressReport(report){
+  state.progressReports.push(report);
+  state.dropline = {date:report.dataDate, label:(state.dropline&&state.dropline.label)||"STATUS DATE"}; // keep the on-screen dropline in step
+  saveState();
+  issueCtx = null;
+  toast("Progress Report "+pad2(report.number)+" issued against Rev "+pad2(report.revNumber));
+  renderTopMeta();
+  showView("progress");
+}
+function viewProgressReport(id){
+  const r = state.progressReports.find(x=>x.id===id);
+  if(!r) return;
+  issueCtx = {report:r, saved:true};
+  issueReturnsTo = "progress";
+  showView("issue");
+}
+function deleteProgressReport(id){
+  const r = state.progressReports.find(x=>x.id===id);
+  if(!r) return;
+  openModal("Delete Progress Report "+pad2(r.number)+"?", '<p style="font-size:13px; color:var(--text-muted);">Removes this report and its delay reasons. The remaining reports are renumbered in order. This can\'t be undone (other than with Undo).</p>', [
+    {label:"Cancel", cls:"btn", action:closeModal},
+    {label:"Delete", cls:"btn btn-danger", action:()=>{
+      state.progressReports = state.progressReports.filter(x=>x.id!==id);
+      state.progressReports.forEach((x,i)=>{ x.number = i+1; });
+      saveState(); closeModal(); renderProgressView(); toast("Progress report deleted");
+    }}
+  ]);
+}
+function reportOverallPct(acts){
+  let t=0, d=0; acts.forEach(a=>{ const w=activityDuration(a)||1; t+=w; d+=w*((a.percentComplete||0)/100); });
+  return t>0 ? Math.round(d/t*100) : 0;
+}
+function renderProgressReports(){
+  const el = document.getElementById("reportTable");
+  if(!el) return;
+  const rows = [...state.progressReports].reverse().map(r=>
+    '<tr><td class="rev-badge">PR '+pad2(r.number)+'</td>'+
+    '<td>Rev '+pad2(r.revNumber)+'</td>'+
+    '<td class="tnum">'+fmtDate(r.dataDate)+'</td>'+
+    '<td class="tnum">'+fmtDate(r.date)+'</td>'+
+    '<td class="tnum">'+reportOverallPct(r.snapshot.activities)+'%</td>'+
+    '<td>'+(r.delays.length?'<span class="pill status-behind"><span class="pill-dot"></span>'+r.delays.length+' behind</span>':'<span class="pill status-on"><span class="pill-dot"></span>None</span>')+'</td>'+
+    '<td>'+esc(r.issuedBy||"")+'</td>'+
+    '<td style="white-space:nowrap;"><button class="btn" data-view-pr="'+r.id+'" style="padding:4px 10px; font-size:12px;">View / Print</button> <button class="icon-btn" data-del-pr="'+r.id+'" title="Delete report">'+trashSvg()+'</button></td></tr>'
+  ).join('');
+  el.innerHTML = '<thead><tr><th>Report</th><th>Against</th><th>Data date</th><th>Issued</th><th>Complete</th><th>Delays</th><th>Issued by</th><th>Document</th></tr></thead>'+
+    '<tbody>'+(rows||'<tr><td colspan="8" style="color:var(--text-muted);">No progress reports yet. Update progress above, then issue a report to get an updated dropline — no new revision needed.</td></tr>')+'</tbody>';
+  el.querySelectorAll("[data-view-pr]").forEach(b=>b.addEventListener("click", ()=>viewProgressReport(b.dataset.viewPr)));
+  el.querySelectorAll("[data-del-pr]").forEach(b=>b.addEventListener("click", ()=>deleteProgressReport(b.dataset.delPr)));
+}
+document.getElementById("issueReportBtn2").addEventListener("click", openProgressReportFlow);
 
 /* ============================================================
    ISSUE PREVIEW (branded document)
@@ -2587,26 +2830,52 @@ const DOC_COLS = [
   {key:"finish", label:"Finish", w:56}
 ];
 const BAND_COLORS = ["#DCE8F5","#F3E1E8"];
-const DOC_PAGE_CONTENT_W = 1480; /* fits printable width of A3 landscape (420mm - 20mm margins) */
-const DOC_PAGE_CONTENT_H = 1000; /* fits printable height of A3 landscape (297mm - 20mm margins) */
+/* Printable area of an A3 sheet (10mm margins). Landscape: 420 x 297mm, portrait: 297 x 420mm. */
+const ORIENT_KEY = "vantry_print_orientation";
+function printOrientation(){ try{ return localStorage.getItem(ORIENT_KEY)==="portrait" ? "portrait" : "landscape"; }catch(e){ return "landscape"; } }
+function setPrintOrientation(o){
+  try{ localStorage.setItem(ORIENT_KEY, o); }catch(e){}
+  applyPrintOrientation();
+}
+function applyPrintOrientation(){
+  const o = printOrientation();
+  let tag = document.getElementById("pageOrientStyle");
+  if(!tag){ tag = document.createElement("style"); tag.id = "pageOrientStyle"; document.head.appendChild(tag); }
+  tag.textContent = "@media print{ @page{ size: A3 "+o+"; margin: 10mm; } }";
+  document.querySelectorAll("#orientSeg [data-orient]").forEach(b=>b.classList.toggle("active", b.dataset.orient===o));
+  const page = document.getElementById("docPage"); if(page) page.classList.toggle("doc-portrait", o==="portrait");
+}
+function docPageW(){ return printOrientation()==="portrait" ? 1020 : 1480; }
+function docPageH(){ return printOrientation()==="portrait" ? 1470 : 1000; }
 const DOC_ROW_H = 22;
 
 function renderIssuePreview(viewRev){
-  const isHistorical = !!(viewRev && viewRev.snapshot);
+  const report = issueCtx && issueCtx.report;
+  if(report) viewRev = null;
+  const isHistorical = report ? !!issueCtx.saved : !!(viewRev && viewRev.snapshot);
   let restoreState = null;
-  if(isHistorical){
+  if(report){
+    restoreState = { workPackages: state.workPackages, activities: state.activities, project: state.project, dropline: state.dropline };
+    state.workPackages = report.snapshot.workPackages;
+    state.activities = report.snapshot.activities;
+    state.project = report.snapshot.project;
+    state.dropline = { date: report.dataDate, label: state.dropline.label };
+  } else if(isHistorical){
     restoreState = { workPackages: state.workPackages, activities: state.activities, project: state.project, dropline: state.dropline };
     state.workPackages = viewRev.snapshot.workPackages;
     state.activities = viewRev.snapshot.activities;
     state.project = viewRev.snapshot.project;
     state.dropline = { date: viewRev.statusDate, label: state.dropline.label };
   }
-  const nextNum = isHistorical ? viewRev.number : currentRevision().number+1;
+  const nextNum = report ? report.revNumber : (isHistorical ? viewRev.number : nextRevisionNumber());
+  const delayIdx = {}; if(report) report.delays.forEach((d,i)=>{ delayIdx[d.actId] = i+1; });
   const range = projectRange();
   const rows = buildRowList();
   const dataW = DOC_COLS.reduce((s,c)=>s+c.w,0);
   const MAX_DAY_W = 26;
   let totalDays = Math.round((range.end-range.start)/DAY_MS)+1;
+  const DOC_PAGE_CONTENT_W = docPageW();
+  applyPrintOrientation();
   const minDaysToFillPage = Math.floor((DOC_PAGE_CONTENT_W - dataW - 4) / MAX_DAY_W);
   if(totalDays < minDaysToFillPage) totalDays = minDaysToFillPage; // pad the timeline with trailing blank days so the chart always fills the page width
   let dayCols=[]; let d=new Date(range.start);
@@ -2634,8 +2903,9 @@ function renderIssuePreview(viewRev){
   '</div>';
 
   let bandIdx = 0;
-  let bodyRows='';
+  const rowParts=[]; // one printed row each; closed after the progress line is added
   rows.forEach((r,idx)=>{
+    let bodyRows='';
     const lineNo = idx+1;
     let rowBg = "#FFFFFF";
     let dataCells;
@@ -2652,7 +2922,7 @@ function renderIssuePreview(viewRev){
         docCell("finish", fmtDateShort(a.plannedFinish), r.depth);
     }
 
-    bodyRows += '<div style="display:flex; align-items:center; height:22px; border-bottom:1px solid #E3E7E1; background:'+rowBg+';">'+
+    bodyRows += '<div style="position:relative; display:flex; align-items:center; height:22px; border-bottom:1px solid #E3E7E1; background:'+rowBg+';">'+
       '<div style="display:flex; flex-shrink:0;">'+dataCells+'</div>'+
       '<div style="position:relative; display:flex;">';
     dayCols.forEach(dt=>{
@@ -2671,10 +2941,12 @@ function renderIssuePreview(viewRev){
       const off=Math.round((toDate(a.plannedStart)-range.start)/DAY_MS);
       const span=Math.max(1, Math.round((toDate(a.plannedFinish)-toDate(a.plannedStart))/DAY_MS)+1);
       const visual = barVisualPrint(a);
+      if(report && delayIdx[a.id] && !a.color){ visual.bg = "#E0740F"; visual.dashed = false; visual.opacity = 1; }
       const style = "position:absolute; left:"+(off*dw+1)+"px; top:3px; width:"+(span*dw-2)+"px; height:16px; border-radius:3px; background:"+(visual.bg||"#FFFFFF")+"; opacity:"+visual.opacity+";"+(visual.dashed?" border:1.5px dashed #CBD3CD;":"");
       bodyRows += '<div style="'+style+'"></div>';
     }
-    bodyRows += '</div></div>';
+    bodyRows += '</div>';
+    rowParts.push(bodyRows);
   });
 
   // Progress line (dropline) on the printed programme — same rules as the on-screen Gantt.
@@ -2696,51 +2968,85 @@ function renderIssuePreview(viewRev){
         for(let n=0;n<whole;n++){ d = addDays(d,1); while(!isWorkingDay(d)) d = addDays(d,1); }
         return dxFor(toISO(d)) + 1 + frac*dw;
       };
-      const RH = 22, H = rows.length*RH;
-      const pts = [[sx,0]];
-      rows.forEach((r,idx)=>{ const x = r.type==="activity" ? px(r.item) : sx; pts.push([x, idx*RH+1],[x, idx*RH+RH-1]); });
-      pts.push([sx,H]);
-      docProgressLine = '<svg style="position:absolute; left:0; top:0; width:100%; height:'+H+'px; pointer-events:none; overflow:visible;">'+
-        '<polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+      // Drawn row by row so the line carries on correctly when the programme runs onto another page.
+      const RH = 22;
+      let prevX = sx;
+      rows.forEach((r,idx)=>{
+        const x = r.type==="activity" ? px(r.item) : sx;
+        const pts = [[prevX,0],[x,1],[x,RH]];
+        if(idx===rows.length-1) pts.push([sx,RH+1]);
+        let marker = '';
+        if(r.type==="activity" && delayIdx[r.item.id]){
+          marker = '<circle cx="'+x.toFixed(1)+'" cy="'+(RH/2)+'" r="6.5" fill="#D0021B"/><text x="'+x.toFixed(1)+'" y="'+(RH/2+2.8)+'" text-anchor="middle" font-size="7.5" font-weight="800" fill="#fff" font-family="inherit">'+delayIdx[r.item.id]+'</text>';
+        }
+        rowParts[idx] += '<svg style="position:absolute; left:0; top:0; width:100%; height:'+RH+'px; pointer-events:none; overflow:visible; z-index:2;">'+
+          '<polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1]).join(' ')+'" fill="none" stroke="#D0021B" stroke-width="1.8" stroke-linejoin="round"/>'+marker+'</svg>';
+        prevX = x;
+      });
     }
   }
+  const bodyRows = rowParts.map(h=>'<tr><td style="padding:0;">'+h+'</div></td></tr>').join('');
   const totalActivities = state.activities.length;
   const varianceDays = projectVarianceDays();
   const varianceLabel = varianceDays===0?"On programme":(varianceDays<0? Math.abs(varianceDays)+" days ahead" : varianceDays+" days behind");
-  const revDate = isHistorical ? fmtDate(viewRev.date) : fmtDate(toISO(new Date()));
+  const revDate = report ? fmtDate(report.revDate) : (isHistorical ? fmtDate(viewRev.date) : fmtDate(toISO(new Date())));
+  const reportDate = report ? fmtDate(isHistorical ? report.date : toISO(new Date())) : "";
+  const prNo = report ? pad2(report.number) : "";
+  const docTitle = report ? "Progress Report" : "Short Term Programme";
+  const docRef = 'PRG-'+esc(state.project.name.split(" ")[0])+'-'+pad2(nextNum)+' · Rev '+pad2(nextNum)+(report?' · Progress Report '+prNo:'');
+  const factsHtml = report
+    ? docFact("Data date", fmtDate(report.dataDate))+docFact("Against revision", "Rev "+pad2(nextNum)+" · issued "+revDate)+docFact("Overall complete", reportOverallPct(state.activities)+"%")+
+      docFact("Planned completion", fmtDate(state.project.plannedCompletion))+docFact("Forecast completion", fmtDate(forecastCompletionISO()))+docFact("Activities behind", String(report.delays.length))
+    : docFact("Status date", state.dropline.date?fmtDate(state.dropline.date):"—")+docFact("Programme start", fmtDate(state.project.programmeStart))+docFact("Planned completion", fmtDate(state.project.plannedCompletion));
+  const barText = report
+    ? 'PROGRESS REPORT '+prNo+' — REV '+pad2(nextNum)+' · DATA DATE '+fmtDate(report.dataDate).toUpperCase()+' · '+totalActivities+' ACTIVITIES · '+(report.delays.length? report.delays.length+' BEHIND' : 'NONE BEHIND')
+    : 'PROGRAMME — '+String(totalActivities)+' ACTIVITIES';
+  let delayRegister = '';
+  if(report){
+    delayRegister = '<div class="doc-delays"><div class="doc-bar" style="margin-top:0;">DELAY REGISTER — '+(report.delays.length? report.delays.length+' ACTIVIT'+(report.delays.length===1?'Y':'IES')+' BEHIND AT '+fmtDate(report.dataDate).toUpperCase() : 'NO ACTIVITIES BEHIND AT '+fmtDate(report.dataDate).toUpperCase())+'</div>'+
+      (report.delays.length?
+      '<table><thead><tr><th style="width:24px;">Ref</th><th>Activity</th><th>Work package</th><th style="width:52px;">Should be</th><th style="width:44px;">Actual</th><th style="width:58px;">Days behind</th><th style="width:60px;">Finish var.</th><th>Reason</th><th style="width:96px;">Responsible</th><th>Notes</th></tr></thead><tbody>'+
+      report.delays.map((d,i)=>'<tr><td><span class="dnum">'+(i+1)+'</span></td><td><b>'+esc(d.name)+'</b></td><td>'+esc(d.wp||"—")+'</td><td>'+d.plannedPct+'%</td><td>'+d.actualPct+'%</td><td>'+d.daysBehind+'</td><td>'+(d.finishVar?'+'+d.finishVar+'d':'—')+'</td><td>'+esc(d.reason)+'</td><td>'+esc(d.responsible)+'</td><td>'+esc(d.note||"")+'</td></tr>').join('')+
+      '</tbody></table>' : '')+
+    '</div>';
+  }
 
   document.getElementById("docPage").innerHTML =
     '<div class="doc-header">'+
       '<div class="doc-logo"><img src="'+CGC_LOGO_DATAURI+'" alt="Cheltenham Green Civils" style="height:40px; width:auto; display:block;"></div>'+
-      '<div class="doc-titleblock"><div class="doc-title">Short Term Programme</div><div class="doc-ref">PRG-'+esc(state.project.name.split(" ")[0])+'-'+String(nextNum).padStart(2,"0")+' · Rev '+String(nextNum).padStart(2,"0")+'</div></div>'+
+      '<div class="doc-titleblock"><div class="doc-title">'+docTitle+'</div><div class="doc-ref" style="color:#1A1A1A; font-weight:700; font-size:12px;">'+esc((currentProgramme()&&currentProgramme().name)||"")+'</div><div class="doc-ref">'+docRef+'</div></div>'+
     '</div>'+
     '<div class="doc-rule"></div>'+
     '<div class="doc-facts">'+
-      docFact("Status date", state.dropline.date?fmtDate(state.dropline.date):"—")+docFact("Programme start", fmtDate(state.project.programmeStart))+docFact("Planned completion", fmtDate(state.project.plannedCompletion))+
+      factsHtml+
     '</div>'+
-    '<div class="doc-bar">PROGRAMME — '+String(totalActivities)+' ACTIVITIES · '+varianceLabel.toUpperCase()+'</div>'+
-    '<div class="doc-gantt-wrap" style="width:'+(dataW+totalDays*dw+2)+'px;">'+headHtml+'<div style="position:relative;">'+bodyRows+docProgressLine+'</div></div>'+
+    '<div class="doc-bar">'+esc(barText)+'</div>'+
+    '<table class="doc-gantt-wrap" style="width:'+(dataW+totalDays*dw+2)+'px;"><thead><tr><td style="padding:0; border-bottom:1px solid #CBD3CD;">'+headHtml+'</td></tr></thead><tbody>'+bodyRows+'</tbody></table>'+
     '<div class="doc-legend">'+
-      legendItem("#1F5A2D","Ahead of programme")+legendItem("#5B665E","On programme")+legendItem("#B4560F","Behind programme")+legendItem("#FFFFFF","Not started")+
-      '<span><i style="background:#1A1A1A; height:6px; border-radius:3px;"></i>Work package summary</span>'+
+            '<span><i style="background:#1A1A1A; height:6px; border-radius:3px;"></i>Work package summary</span>'+
       legendItem("#EEF0ED","Weekend")+legendItem("#F6E8D2","UK bank holiday")+
-      (state.dropline && state.dropline.date ? '<span><i style="background:#D0021B; height:2px; border-radius:0;"></i>Progress line at status date (left = behind, right = ahead)</span>' : '')+
+      (state.dropline && state.dropline.date ? '<span><i style="background:#D0021B; height:2px; border-radius:0;"></i>Progress line at '+(report?'data':'status')+' date (left = behind, right = ahead)</span>' : '')+
+      (report && report.delays.length ? '<span><i style="background:#D0021B; border-radius:50%;"></i>Delayed activity — see delay register</span>' : '')+
     '</div>'+
+    delayRegister+
     '<div class="doc-titleblock-grid">'+
-      '<div class="ttb-col" style="flex:1.1;"><div class="ttb-sub"><b>Job No:</b>&nbsp;'+esc(state.project.jobNo||"—")+'</div><div class="ttb-sub ttb-sub-b"><b>Date:</b>&nbsp;'+revDate+'</div></div>'+
-      '<div class="ttb-col" style="flex:1.2;"><div class="ttb-sub"><b>Revision No:</b>&nbsp;'+String(nextNum).padStart(2,"0")+'</div><div class="ttb-sub ttb-sub-b"><b>Rev. date:</b>&nbsp;'+revDate+'</div></div>'+
-      '<div class="ttb-col" style="flex:1.5;"><div class="ttb-sub"><b>Drawn:</b>&nbsp;'+esc(state.project.drawnBy||"")+'</div><div class="ttb-sub ttb-sub-b"><b>Author:</b>&nbsp;'+esc(state.project.projectManager)+'</div></div>'+
-      '<div class="ttb-col ttb-proj" style="flex:2.3;"><div style="font-weight:800; font-size:13px;">'+esc(state.project.name)+'</div><div style="font-size:11px; color:#2E6DA4; font-weight:600; margin-top:3px;">'+esc(state.project.principalContractor)+'</div></div>'+
+      '<div class="ttb-col" style="flex:1.1;"><div class="ttb-sub"><b>Job No:</b>&nbsp;'+esc(state.project.jobNo||"—")+'</div><div class="ttb-sub ttb-sub-b"><b>Date:</b>&nbsp;'+(report?reportDate:revDate)+'</div></div>'+
+      '<div class="ttb-col" style="flex:1.2;"><div class="ttb-sub"><b>Revision No:</b>&nbsp;'+String(nextNum).padStart(2,"0")+'</div><div class="ttb-sub ttb-sub-b"><b>'+(report?'Report No:':'Rev. date:')+'</b>&nbsp;'+(report?prNo+' (data date '+fmtDate(report.dataDate)+')':revDate)+'</div></div>'+
+      '<div class="ttb-col" style="flex:1.5;"><div class="ttb-sub"><b>Drawn:</b>&nbsp;'+esc(state.project.drawnBy||"")+'</div><div class="ttb-sub ttb-sub-b"><b>'+(report?'Issued by:':'Author:')+'</b>&nbsp;'+esc(report?(report.issuedBy||state.project.projectManager):state.project.projectManager)+'</div></div>'+
+      '<div class="ttb-col ttb-proj" style="flex:2.3;"><div style="font-weight:800; font-size:13px;">'+esc(state.project.name)+' · '+esc((currentProgramme()&&currentProgramme().name)||"")+'</div><div style="font-size:11px; color:#2E6DA4; font-weight:600; margin-top:3px;">'+esc(state.project.principalContractor)+'</div></div>'+
     '</div>'+
-    '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+String(nextNum).padStart(2,"0")+'</span><span>Issued '+revDate+' · Page 1 of 1</span></div>';
+    '<div class="doc-footer"><span>'+esc(state.project.name)+' · Rev '+pad2(nextNum)+(report?' · Progress Report '+prNo:'')+'</span><span>Issued '+(report?reportDate:revDate)+'</span></div>';
 
   padDocToPageBottom(dayCols, dw);
 
   const confirmBtn = document.getElementById("confirmIssueBtn");
   const chip = document.getElementById("issueStatusChip");
+  confirmBtn.textContent = report ? "Confirm & save progress report" : "Confirm & save revision";
   if(isHistorical){
     confirmBtn.style.display = "none";
-    chip.textContent = "Viewing Rev "+String(viewRev.number).padStart(2,"0")+" exactly as it was issued on "+fmtDate(viewRev.date)+" — read-only.";
+    chip.textContent = report
+      ? "Viewing Progress Report "+prNo+" (Rev "+pad2(nextNum)+") exactly as issued on "+fmtDate(report.date)+" — read-only."
+      : "Viewing Rev "+String(viewRev.number).padStart(2,"0")+" exactly as it was issued on "+fmtDate(viewRev.date)+" — read-only.";
   } else {
     confirmBtn.style.display = "";
     chip.textContent = document.getElementById("printBtn")
@@ -2779,20 +3085,20 @@ function padDocToPageBottom(dayCols, dw){
   const pageTop = docPageEl.getBoundingClientRect().top;
   const padTop = parseFloat(getComputedStyle(docPageEl).paddingTop) || 0;
   const contentHeight = (footerEl.getBoundingClientRect().bottom - pageTop) - padTop; // height the doc will actually print at (print strips this padding)
-  const gap = DOC_PAGE_CONTENT_H - contentHeight;
+  const gap = docPageH() - contentHeight;
   if(gap <= DOC_ROW_H) return; // already fills the page (or overflows onto further pages) — leave pagination to the browser
   const extraRows = Math.floor(gap / DOC_ROW_H);
   let fillerHtml = '';
   for(let i=0;i<extraRows;i++){
-    fillerHtml += '<div style="display:flex; align-items:center; height:'+DOC_ROW_H+'px; border-bottom:1px solid #E3E7E1; background:#FFFFFF;">'+
+    fillerHtml += '<tr><td style="padding:0;"><div style="display:flex; align-items:center; height:'+DOC_ROW_H+'px; border-bottom:1px solid #E3E7E1; background:#FFFFFF;">'+
       '<div style="display:flex; flex-shrink:0;">'+DOC_COLS.map(c=>'<div style="width:'+c.w+'px; flex-shrink:0; height:100%; border-right:1px solid #CBD3CD;"></div>').join('')+'</div>'+
       '<div style="position:relative; display:flex;">'+dayCols.map(dt=>{
         const we=dt.getDay()===0||dt.getDay()===6, bh=isBankHoliday(dt);
         return '<div style="width:'+dw+'px; height:'+DOC_ROW_H+'px; flex-shrink:0; border-right:1px solid #EEF0ED; background:'+(bh?"#F6E8D2":we?"#EEF0ED":"transparent")+';"></div>';
       }).join('')+'</div>'+
-    '</div>';
+    '</div></td></tr>';
   }
-  wrap.insertAdjacentHTML("beforeend", fillerHtml);
+  (wrap.querySelector("tbody")||wrap).insertAdjacentHTML("beforeend", fillerHtml);
 }
 
 /* ============================================================
