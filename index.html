@@ -269,6 +269,9 @@
   .doc-facts{display:grid; grid-template-columns:repeat(3,1fr); border:1px solid #CBD3CD; border-radius:4px; overflow:hidden; margin-bottom:16px;}
   .doc-fact{padding:9px 12px; border-right:1px solid #CBD3CD; border-bottom:1px solid #CBD3CD;}
   .doc-fact:nth-child(3n){border-right:none;}
+  .doc-facts.doc-facts-2{grid-template-columns:repeat(2,1fr);}
+  .doc-facts.doc-facts-2 .doc-fact:nth-child(3n){border-right:1px solid #CBD3CD;}
+  .doc-facts.doc-facts-2 .doc-fact:nth-child(2n){border-right:none;}
   .doc-fact-label{font-size:9.5px; font-weight:700; color:#1F5A2D; text-transform:uppercase; letter-spacing:.05em;}
   .doc-fact-value{font-size:12.5px; font-weight:600; color:#2E6DA4; margin-top:2px;}
   .doc-bar{background:#1F5A2D; color:#fff; font-weight:800; font-size:11px; letter-spacing:.04em; padding:7px 12px; border-radius:6px; margin:14px 0 8px;}
@@ -3112,7 +3115,7 @@ function renderIssuePreview(viewRev){
   const factsHtml = report
     ? docFact("Data date", fmtDate(report.dataDate))+docFact("Against revision", "Rev "+pad2(nextNum)+" · issued "+revDate)+docFact("Overall complete", reportOverallPct(state.activities)+"%")+
       docFact("Planned completion", fmtDate(state.project.plannedCompletion))+docFact("Forecast completion", fmtDate(forecastCompletionISO()))+docFact("Activities behind", String(report.delays.length))
-    : docFact("Status date", state.dropline.date?fmtDate(state.dropline.date):"—")+docFact("Programme start", fmtDate(state.project.programmeStart))+docFact("Planned completion", fmtDate(state.project.plannedCompletion));
+    : docFact("Programme start", fmtDate(state.project.programmeStart))+docFact("Planned completion", fmtDate(state.project.plannedCompletion));
   const barText = report
     ? 'PROGRESS REPORT '+prNo+' — REV '+pad2(nextNum)+' · DATA DATE '+fmtDate(report.dataDate).toUpperCase()+' · '+totalActivities+' ACTIVITIES · '+(report.delays.length? report.delays.length+' BEHIND' : 'NONE BEHIND')
     : 'PROGRAMME — '+String(totalActivities)+' ACTIVITIES';
@@ -3132,7 +3135,7 @@ function renderIssuePreview(viewRev){
       '<div class="doc-titleblock"><div class="doc-title">'+docTitle+'</div><div class="doc-ref" style="color:#1A1A1A; font-weight:700; font-size:12px;">'+esc((currentProgramme()&&currentProgramme().name)||"")+'</div><div class="doc-ref">'+docRef+'</div></div>'+
     '</div>'+
     '<div class="doc-rule"></div>'+
-    '<div class="doc-facts">'+
+    '<div class="doc-facts'+(report?'':' doc-facts-2')+'">'+
       factsHtml+
     '</div>'+
     '<div class="doc-bar">'+esc(barText)+'</div>'+
