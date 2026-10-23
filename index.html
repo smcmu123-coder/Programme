@@ -2943,6 +2943,25 @@ function applyPrintOrientation(){
 function docPageW(){ return printOrientation()==="portrait" ? 1020 : 1480; }
 function docPageH(){ return printOrientation()==="portrait" ? 1470 : 1000; }
 const DOC_ROW_H = 22;
+/* The Name column on the printed programme sizes itself to the longest work package / activity
+   name (plus its indent), so names print in full instead of being cut off. It's capped at half
+   the sheet width so the bars still have room — "Fit to one page" then scales the sheet if needed. */
+let docMeasureCtx = null;
+function measureDocText(text, bold){
+  if(!docMeasureCtx) docMeasureCtx = document.createElement("canvas").getContext("2d");
+  docMeasureCtx.font = (bold?"700":"400")+' 9px "Public Sans","Segoe UI",Arial,sans-serif';
+  return docMeasureCtx.measureText(String(text==null?"":text)).width;
+}
+function sizeDocNameColumn(rows){
+  const col = DOC_COLS.find(c=>c.key==="name");
+  let need = 0;
+  rows.forEach(r=>{
+    // text width (+8% allowance for font differences when printing) + left padding + indent + right breathing room
+    const w = measureDocText(r.item.name, r.type==="wp")*1.08 + 4 + r.depth*10 + 10;
+    if(w>need) need = w;
+  });
+  col.w = Math.round(Math.max(180, Math.min(docPageW()*0.5, need)));
+}
 
 function renderIssuePreview(viewRev){
   const report = issueCtx && issueCtx.report;
@@ -2966,6 +2985,7 @@ function renderIssuePreview(viewRev){
   const delayIdx = {}; if(report) report.delays.forEach((d,i)=>{ delayIdx[d.actId] = i+1; });
   const range = projectRange();
   const rows = buildRowList();
+  sizeDocNameColumn(rows);
   const dataW = DOC_COLS.reduce((s,c)=>s+c.w,0);
   const MAX_DAY_W = 26;
   let totalDays = Math.round((range.end-range.start)/DAY_MS)+1;
